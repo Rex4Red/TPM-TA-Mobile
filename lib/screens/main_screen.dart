@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'favorite_screen.dart';
 import 'location_screen.dart'; 
+import 'tools_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,6 +18,7 @@ class _MainScreenState extends State<MainScreen> {
     const HomeScreen(),
     const FavoriteScreen(),
     const LocationScreen(),
+    const ToolsScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -56,6 +58,8 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.map_rounded), 
             label: 'Peta', // Saya ganti labelnya jadi 'Peta' agar lebih relevan (Opsional)
           ),
+
+          BottomNavigationBarItem(icon: Icon(Icons.grid_view_rounded), label: 'Tools'),
         ],
       ),
     );

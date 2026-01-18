@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
-import 'favorites_screen.dart';
+import 'favorite_screen.dart';
 import 'notification_settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -160,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: const Text("Koleksi Favorit Saya", style: TextStyle(color: Colors.white)),
                     trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesScreen()));
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoriteScreen()));
                     },
                   ),
 

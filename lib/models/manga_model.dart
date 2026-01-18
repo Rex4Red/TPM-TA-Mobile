@@ -4,7 +4,7 @@ class Manga {
   final String image;
   final String chapter;
   final String score;
-  final String type; // 'shinigami' atau 'komikindo'
+  final String type;
 
   Manga({
     required this.id,
@@ -15,15 +15,15 @@ class Manga {
     required this.type,
   });
 
-  // Fungsi untuk mengubah JSON dari API menjadi Object Dart
   factory Manga.fromJson(Map<String, dynamic> json) {
     return Manga(
-      id: json['id'] ?? '',
-      title: json['title'] ?? 'Tanpa Judul',
-      image: json['image'] ?? '',
-      chapter: json['chapter'] ?? '',
-      score: json['score'].toString(), // Pastikan jadi string
-      type: json['type'] ?? 'shinigami',
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Tanpa Judul',
+      // Ambil gambar dari berbagai kemungkinan key agar tidak null
+      image: json['image'] ?? json['thumb'] ?? json['thumbnail'] ?? json['cover'] ?? '',
+      chapter: json['chapter']?.toString() ?? 'Ch. ?',
+      score: json['score']?.toString() ?? 'N/A',
+      type: json['type']?.toString() ?? 'unknown',
     );
   }
 }

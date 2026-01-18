@@ -20,37 +20,37 @@ class BookmarkService {
   }
 
   // 2. Tambah/Hapus Favorit (Toggle)
+  // Tambahkan parameter 'latestChapter'
   Future<bool> toggleBookmark({
     required String source,
     required String mangaId,
     required String title,
     required String cover,
+    required String latestChapter, // <--- PARAMETER BARU
   }) async {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception("Harus login dulu!");
 
-    // Cek dulu sudah ada belum
     final isExist = await isBookmarked(source, mangaId);
 
     if (isExist) {
-      // Kalau sudah ada -> HAPUS
       await _supabase
           .from('bookmarks')
           .delete()
           .eq('user_id', user.id)
           .eq('source', source)
           .eq('manga_id', mangaId);
-      return false; // Status baru: Tidak Favorit
+      return false; 
     } else {
-      // Kalau belum ada -> TAMBAH
       await _supabase.from('bookmarks').insert({
         'user_id': user.id,
         'source': source,
         'manga_id': mangaId,
         'title': title,
         'cover': cover,
+        'last_chapter': latestChapter, // <--- SIMPAN DI SINI
       });
-      return true; // Status baru: Favorit
+      return true; 
     }
   }
 

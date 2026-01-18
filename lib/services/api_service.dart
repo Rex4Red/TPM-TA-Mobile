@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import '../models/manga_model.dart';
-import '../models/manga_detail_model.dart'; // Jangan lupa import ini!
+import '../models/manga_detail_model.dart'; 
 
 class ApiService {
   // URL Vercel (Production)
@@ -15,13 +15,12 @@ class ApiService {
         '$baseUrl/list',
         queryParameters: {
           'source': source,
-          if (query.isNotEmpty) 'q': query,
+          'q': query.isNotEmpty ? query : null, // Kirim null jika kosong biar rapi
         },
       );
 
       if (response.statusCode == 200 && response.data['status'] == true) {
         final List data = response.data['data'];
-        // Convert list JSON menjadi list Object Manga
         return data.map((json) => Manga.fromJson(json)).toList();
       } else {
         throw Exception('Gagal load data list');
@@ -44,7 +43,6 @@ class ApiService {
       );
 
       if (response.statusCode == 200 && response.data['status'] == true) {
-        // Ambil data dari key 'data' dan masukkan ke cetakan MangaDetail
         return MangaDetail.fromJson(response.data['data']);
       } else {
         throw Exception('Gagal load data detail');
@@ -55,6 +53,7 @@ class ApiService {
     }
   }
 
+  // --- 3. AMBIL GAMBAR CHAPTER (BACA KOMIK) ---
   Future<List<String>> fetchChapterImages({required String source, required String chapterId}) async {
     try {
       final response = await _dio.get(
@@ -66,7 +65,6 @@ class ApiService {
       );
 
       if (response.statusCode == 200 && response.data['status'] == true) {
-        // API mengembalikan array string URL gambar
         return List<String>.from(response.data['data']);
       } else {
         throw Exception('Gagal load gambar chapter');
@@ -74,6 +72,44 @@ class ApiService {
     } catch (e) {
       print("❌ Error Fetching Images: $e");
       rethrow;
+    }
+  }
+
+  // --- 4. KIRIM NOTIFIKASI (DISCORD / TELEGRAM) ---
+  // Fungsi ini dipanggil saat user menekan tombol Love di DetailScreen
+  Future<void> sendNotification({
+    required String title,
+    required String cover,
+    required String userEmail,
+    required bool isAdded, // True = Ditambah, False = Dihapus
+    // Parameter Opsional (Diambil dari settingan user)
+    String? discordWebhook,
+    String? telegramToken,
+    String? telegramChatId,
+  }) async {
+    // Kalau dihapus (unlove), tidak perlu kirim notif
+    if (!isAdded) return;
+
+    try {
+      // Endpoint: /api/mobile/notify
+      await _dio.post(
+        '$baseUrl/notify', 
+        data: {
+          'title': title,
+          'cover': cover,
+          'user_email': userEmail,
+          'status': isAdded,
+          // Data settingan user (boleh null)
+          'discord_webhook': discordWebhook,
+          'telegram_bot_token': telegramToken,
+          'telegram_chat_id': telegramChatId,
+        },
+      );
+      print("🔔 Request Notifikasi Terkirim ke Backend!");
+    } catch (e) {
+      // Kita print error saja, jangan throw exception agar aplikasi tidak crash
+      // karena ini hanya fitur tambahan (background process).
+      print("❌ Gagal kirim notifikasi: $e");
     }
   }
 }

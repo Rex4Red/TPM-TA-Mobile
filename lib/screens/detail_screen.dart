@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; 
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/api_service.dart';
 import '../models/manga_detail_model.dart';
-import 'read_screen.dart'; // Import layar baca
-import '../services/bookmark_service.dart'; // Import service bookmark
+import 'read_screen.dart'; 
+import '../services/bookmark_service.dart'; 
 
 class DetailScreen extends StatefulWidget {
   final String source;
@@ -57,21 +58,55 @@ class _DetailScreenState extends State<DetailScreen> {
   // Fungsi Saat Tombol Love Ditekan
   void _onBookmarkPressed() async {
     try {
-      // Ubah UI duluan biar responsif (Optimistic UI)
+      // 1. Ambil data detail yang sudah di-load (tunggu jika belum selesai)
+      final data = await _detail;
+
+      // 2. Ambil Chapter Terbaru (Biasanya index ke-0 adalah yang paling baru)
+      String latestChapter = "Chapter -";
+      if (data.chapters.isNotEmpty) {
+        latestChapter = data.chapters.first.title;
+      }
+
+      // 3. Update UI Optimistic
       setState(() => _isBookmarked = !_isBookmarked); 
       
-      // Kirim request ke Supabase
+      // 4. Simpan ke Database dengan info Last Chapter
       final newStatus = await _bookmarkService.toggleBookmark(
         source: widget.source,
         mangaId: widget.mangaId,
         title: widget.title,
         cover: widget.cover,
+        latestChapter: latestChapter, // <--- DATA BARU DIKIRIM KE SINI
       );
 
-      // Pastikan status sinkron dengan hasil server
+      // 5. Sinkronisasi status
       if (mounted) setState(() => _isBookmarked = newStatus);
 
-      // Tampilkan notifikasi
+      // --- LOGIKA NOTIFIKASI ---
+      if (newStatus == true) {
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null && user.email != null) {
+           // Ambil settingan notifikasi user
+           final settings = await Supabase.instance.client
+               .from('user_settings')
+               .select()
+               .eq('user_id', user.id)
+               .maybeSingle();
+           
+           // Kirim notifikasi
+           ApiService().sendNotification(
+             title: widget.title, 
+             cover: widget.cover, 
+             userEmail: user.email!, 
+             isAdded: true,
+             discordWebhook: settings?['discord_webhook'],      
+             telegramToken: settings?['telegram_bot_token'],    
+             telegramChatId: settings?['telegram_chat_id'],     
+           );
+        }
+      }
+      // -----------------------------
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -82,7 +117,8 @@ class _DetailScreenState extends State<DetailScreen> {
         );
       }
     } catch (e) {
-      // Kalau gagal (misal belum login), kembalikan status icon
+      // Error Handling
+      print("Error Bookmark: $e");
       if (mounted) setState(() => _isBookmarked = !_isBookmarked);
       
       if (mounted) {
@@ -224,7 +260,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   childCount: data.chapters.length,
                 ),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: 80)), // Padding bawah lebih besar karena ada FAB
+              const SliverToBoxAdapter(child: SizedBox(height: 80)), 
             ],
           );
         },

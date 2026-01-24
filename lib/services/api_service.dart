@@ -4,7 +4,7 @@ import '../models/manga_detail_model.dart';
 
 class ApiService {
   // URL Vercel (Production)
-  static const String baseUrl = 'https://project-web-manga-rex4red.vercel.app/api/mobile';
+  static const String baseUrl = 'https://rex4red-rex4red-komik-api-scrape.hf.space/api/mobile';
 
   final Dio _dio = Dio();
 

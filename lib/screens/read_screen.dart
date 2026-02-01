@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/api_service.dart';
-import '../services/history_service.dart'; // Import Service History
+import '../services/history_service.dart';
+import '../models/manga_detail_model.dart';
 
 class ReadScreen extends StatefulWidget {
   final String source;
-  final String mangaId;      // Tambahan: ID Manga
-  final String mangaTitle;   // Tambahan: Judul Manga
-  final String mangaCover;   // Tambahan: Cover Manga
+  final String mangaId;
+  final String mangaTitle;
+  final String mangaCover;
   final String chapterId;
   final String chapterTitle;
+  // Chapter navigation
+  final List<Chapter> chapters;
+  final int currentIndex;
 
   const ReadScreen({
     super.key,
@@ -19,6 +23,8 @@ class ReadScreen extends StatefulWidget {
     required this.mangaCover,
     required this.chapterId,
     required this.chapterTitle,
+    required this.chapters,
+    required this.currentIndex,
   });
 
   @override
@@ -28,6 +34,10 @@ class ReadScreen extends StatefulWidget {
 class _ReadScreenState extends State<ReadScreen> {
   late Future<List<String>> _imagesFuture;
   final HistoryService _historyService = HistoryService();
+  final ScrollController _scrollController = ScrollController();
+
+  bool get hasPrevChapter => widget.currentIndex < widget.chapters.length - 1;
+  bool get hasNextChapter => widget.currentIndex > 0;
 
   @override
   void initState() {
@@ -36,9 +46,13 @@ class _ReadScreenState extends State<ReadScreen> {
       source: widget.source,
       chapterId: widget.chapterId,
     );
-    
-    // --- AUTO SAVE KE HISTORY ---
     _saveToHistory();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _saveToHistory() {
@@ -51,6 +65,37 @@ class _ReadScreenState extends State<ReadScreen> {
       source: widget.source,
     );
     _historyService.markChapterAsRead(widget.mangaId, widget.chapterId);
+  }
+
+  void _navigateToChapter(int newIndex) {
+    final chapter = widget.chapters[newIndex];
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReadScreen(
+          source: widget.source,
+          mangaId: widget.mangaId,
+          mangaTitle: widget.mangaTitle,
+          mangaCover: widget.mangaCover,
+          chapterId: chapter.id,
+          chapterTitle: chapter.title,
+          chapters: widget.chapters,
+          currentIndex: newIndex,
+        ),
+      ),
+    );
+  }
+
+  void _goToPrevChapter() {
+    if (hasPrevChapter) {
+      _navigateToChapter(widget.currentIndex + 1);
+    }
+  }
+
+  void _goToNextChapter() {
+    if (hasNextChapter) {
+      _navigateToChapter(widget.currentIndex - 1);
+    }
   }
 
   @override
@@ -84,35 +129,85 @@ class _ReadScreenState extends State<ReadScreen> {
 
           final images = snapshot.data!;
 
-          return InteractiveViewer(
-            minScale: 1.0,
-            maxScale: 3.0,
-            child: ListView.builder(
-              cacheExtent: 5000, 
-              itemCount: images.length,
-              itemBuilder: (context, index) {
-                return CachedNetworkImage(
-                  imageUrl: images[index],
-                  fit: BoxFit.fitWidth,
-                  placeholder: (context, url) => Container(
-                    height: 200,
-                    color: Colors.grey[900],
-                    child: const Center(child: CircularProgressIndicator(color: Colors.grey)),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    height: 100,
-                    color: Colors.grey[900],
-                    child: const Icon(Icons.broken_image, color: Colors.red),
-                  ),
-                  httpHeaders: const {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                    "Referer": "https://google.com"
-                  },
-                );
-              },
-            ),
+          return ListView.builder(
+            controller: _scrollController,
+            cacheExtent: 5000,
+            itemCount: images.length,
+            itemBuilder: (context, index) {
+              return CachedNetworkImage(
+                imageUrl: images[index],
+                fit: BoxFit.fitWidth,
+                placeholder: (context, url) => Container(
+                  height: 200,
+                  color: Colors.grey[900],
+                  child: const Center(child: CircularProgressIndicator(color: Colors.grey)),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  height: 100,
+                  color: Colors.grey[900],
+                  child: const Icon(Icons.broken_image, color: Colors.red),
+                ),
+                httpHeaders: const {
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                  "Referer": "https://google.com"
+                },
+              );
+            },
           );
         },
+      ),
+      // Bottom Navigation Bar untuk Prev/Next Chapter
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              // Prev Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: hasPrevChapter ? _goToPrevChapter : null,
+                  icon: const Icon(Icons.arrow_back_ios, size: 18),
+                  label: const Text("Prev"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: hasPrevChapter ? Colors.blue : Colors.grey[800],
+                    foregroundColor: hasPrevChapter ? Colors.white : Colors.grey[600],
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Next Button  
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: hasNextChapter ? _goToNextChapter : null,
+                  icon: const Icon(Icons.arrow_forward_ios, size: 18),
+                  label: const Text("Next"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: hasNextChapter ? Colors.blue : Colors.grey[800],
+                    foregroundColor: hasNextChapter ? Colors.white : Colors.grey[600],
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

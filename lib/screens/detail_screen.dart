@@ -308,6 +308,9 @@ class _DetailScreenState extends State<DetailScreen> {
                                  mangaId: widget.mangaId,
                                  mangaTitle: widget.title,
                                  mangaCover: widget.cover,
+                                 // Data untuk navigasi chapter
+                                 chapters: data.chapters,
+                                 currentIndex: index,
                                ),
                              ),
                            );

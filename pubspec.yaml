@@ -30,6 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+    
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -44,6 +45,8 @@ dependencies:
   intl: ^0.20.2
   sensors_plus: ^6.1.0
   vibration: ^2.0.1
+  carousel_slider: ^5.0.0
+  google_fonts: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -55,17 +58,25 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
+
+  # Daftarkan folder gambar di sini
+  assets:
+    - assets/images/
+
+flutter_launcher_icons:
+  android: "launcher_icon" 
+  ios: true
+  image_path: "assets/images/logo_r.png" # Pastikan path ini benar sesuai lokasi logo kamu
+  min_sdk_android: 21 # Opsional, untuk support hp lama
+  remove_alpha_ios: true
 
   # To add assets to your application, add an assets section, like this:
   # assets:

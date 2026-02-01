@@ -4,7 +4,7 @@ class Manga {
   final String image;
   final String chapter;
   final String score;
-  final String type;
+  final String type; // 'shinigami' atau 'komikindo'
 
   Manga({
     required this.id,
@@ -15,15 +15,17 @@ class Manga {
     required this.type,
   });
 
-  factory Manga.fromJson(Map<String, dynamic> json) {
+  // 🔥 UPDATE: Tambahkan parameter 'source' di sini
+  factory Manga.fromJson(Map<String, dynamic> json, String source) {
     return Manga(
-      id: json['id']?.toString() ?? '',
+      id: json['id']?.toString() ?? json['endpoint'] ?? '',
       title: json['title']?.toString() ?? 'Tanpa Judul',
-      // Ambil gambar dari berbagai kemungkinan key agar tidak null
+      // Cek semua kemungkinan key gambar
       image: json['image'] ?? json['thumb'] ?? json['thumbnail'] ?? json['cover'] ?? '',
       chapter: json['chapter']?.toString() ?? 'Ch. ?',
       score: json['score']?.toString() ?? 'N/A',
-      type: json['type']?.toString() ?? 'unknown',
+      // 🔥 PENTING: Pakai source dari parameter, jangan dari json yang mungkin null
+      type: source, 
     );
   }
 }

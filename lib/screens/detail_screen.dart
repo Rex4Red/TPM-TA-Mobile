@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; 
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/api_service.dart';
 import '../models/manga_detail_model.dart';
-import 'read_screen.dart'; 
 import '../services/bookmark_service.dart';
-import '../services/history_service.dart'; // 1. Import History Service
+import '../services/history_service.dart'; // Pastikan ada
+import 'read_screen.dart'; // Pastikan ada
 
 class DetailScreen extends StatefulWidget {
   final String source;
@@ -28,92 +28,77 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   late Future<MangaDetail> _detail;
   
-  // --- VARIABEL ---
-  bool _isBookmarked = false; 
+  // Service
   final BookmarkService _bookmarkService = BookmarkService();
-  final HistoryService _historyService = HistoryService(); // 2. Instance History
-
-  // Set untuk menyimpan ID chapter yang sudah dibaca
-  Set<String> _readChapterIds = {}; 
+  final HistoryService _historyService = HistoryService();
+  
+  bool _isBookmarked = false;
+  Set<String> _readChapterIds = {};
 
   @override
   void initState() {
     super.initState();
-    // 1. Ambil data detail komik
+    // 1. Load Detail
     _detail = ApiService().fetchMangaDetail(source: widget.source, id: widget.mangaId);
     
-    // 2. Cek status bookmark
+    // 2. Cek Bookmark & History
     _checkBookmarkStatus();
-
-    // 3. 🔥 AMBIL DATA CHAPTER YG SUDAH DIBACA 🔥
     _fetchReadChapters();
   }
 
-  // Fungsi ambil data chapter read dari Supabase
-  void _fetchReadChapters() async {
-    final ids = await _historyService.getReadChapterIds(widget.mangaId);
-    if (mounted) {
-      setState(() {
-        _readChapterIds = ids.toSet();
-      });
-    }
-  }
-
-  // Fungsi Cek Status Bookmark di Database
   void _checkBookmarkStatus() async {
     try {
       final status = await _bookmarkService.isBookmarked(widget.source, widget.mangaId);
-      if (mounted) {
-        setState(() {
-          _isBookmarked = status;
-        });
-      }
+      if (mounted) setState(() => _isBookmarked = status);
     } catch (e) {
       print("Bookmark Check Error: $e");
     }
   }
 
-  // Fungsi Saat Tombol Love Ditekan
-  void _onBookmarkPressed() async {
+  void _fetchReadChapters() async {
     try {
-      final data = await _detail;
-      String latestChapter = "Chapter -";
-      if (data.chapters.isNotEmpty) {
-        latestChapter = data.chapters.first.title;
-      }
+      final ids = await _historyService.getReadChapterIds(widget.mangaId);
+      if (mounted) setState(() => _readChapterIds = ids.toSet());
+    } catch (e) {
+      print("History Check Error: $e");
+    }
+  }
 
-      setState(() => _isBookmarked = !_isBookmarked); 
-      
+  // 🔥 FUNGSI UTAMA: BOOKMARK & NOTIFIKASI 🔥
+  void _onBookmarkPressed() async {
+    final user = Supabase.instance.client.auth.currentUser;
+
+    // 1. Cek Login
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Silakan Login untuk menyimpan favorit!")),
+      );
+      return;
+    }
+
+    try {
+      // 2. Optimistic Update (Ubah UI duluan biar cepat)
+      setState(() => _isBookmarked = !_isBookmarked);
+
+      // 3. Ambil data detail (untuk dapat chapter terakhir)
+      final data = await _detail;
+      String latestChapter = data.chapters.isNotEmpty ? data.chapters.first.title : "Chapter -";
+
+      // 4. Simpan ke Database Lokal/Supabase (Bookmark Service)
       final newStatus = await _bookmarkService.toggleBookmark(
         source: widget.source,
         mangaId: widget.mangaId,
         title: widget.title,
         cover: widget.cover,
-        latestChapter: latestChapter, 
+        latestChapter: latestChapter,
       );
 
+      // 5. Sinkronkan status UI
       if (mounted) setState(() => _isBookmarked = newStatus);
 
-      // --- LOGIKA NOTIFIKASI ---
-      if (newStatus == true) {
-        final user = Supabase.instance.client.auth.currentUser;
-        if (user != null && user.email != null) {
-           final settings = await Supabase.instance.client
-               .from('user_settings')
-               .select()
-               .eq('user_id', user.id)
-               .maybeSingle();
-           
-           ApiService().sendNotification(
-             title: widget.title, 
-             cover: widget.cover, 
-             userEmail: user.email!, 
-             isAdded: true,
-             discordWebhook: settings?['discord_webhook'],      
-             telegramToken: settings?['telegram_bot_token'],    
-             telegramChatId: settings?['telegram_chat_id'],     
-           );
-        }
+      // 6. 🔥 LOGIKA KIRIM NOTIFIKASI 🔥
+      if (newStatus == true) { // Hanya kirim notif saat DITAMBAHKAN
+        _sendNotificationToUser(user.id, user.email ?? "User");
       }
 
       if (mounted) {
@@ -125,27 +110,72 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         );
       }
+
     } catch (e) {
-      print("Error Bookmark: $e");
-      if (mounted) setState(() => _isBookmarked = !_isBookmarked);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Gagal! Pastikan kamu sudah Login."),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+      print("Bookmark Error: $e");
+      if (mounted) setState(() => _isBookmarked = !_isBookmarked); // Rollback jika error
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: $e")));
     }
+  }
+
+  // Fungsi Terpisah untuk Ambil Setting & Kirim Notif
+  Future<void> _sendNotificationToUser(String userId, String userEmail) async {
+    try {
+      // A. Ambil Settingan User dari Supabase
+      final settings = await Supabase.instance.client
+          .from('user_settings')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (settings != null) {
+        // Ambil token, jika isinya "EMPTY" anggap null
+        String? discord = settings['discord_webhook'];
+        if (discord == "EMPTY" || discord == "") discord = null;
+
+        String? tgToken = settings['telegram_bot_token'];
+        if (tgToken == "EMPTY" || tgToken == "") tgToken = null;
+
+        String? tgChatId = settings['telegram_chat_id'];
+        if (tgChatId == "EMPTY" || tgChatId == "") tgChatId = null;
+
+        // B. Panggil API Service untuk kirim notif
+        await ApiService().sendNotification(
+          title: widget.title,
+          cover: widget.cover,
+          userEmail: userEmail,
+          isAdded: true,
+          discordWebhook: discord,
+          telegramToken: tgToken,
+          telegramChatId: tgChatId,
+        );
+        print("Notifikasi dikirim ke ApiService");
+      } else {
+        print("User settings tidak ditemukan.");
+      }
+    } catch (e) {
+      print("Gagal kirim notifikasi: $e");
+    }
+  }
+
+  // Helper untuk Header Gambar
+  Map<String, String> _getHeaders(String source) {
+    if (source == 'shinigami') {
+      return {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Referer": "https://shinigami.id/"
+      };
+    }
+    return {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Referer": "https://komikindo.tv/"
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      
-      // 👇 TOMBOL LOVE MELAYANG (FAB)
       floatingActionButton: FloatingActionButton(
         onPressed: _onBookmarkPressed,
         backgroundColor: Colors.grey[900],
@@ -154,7 +184,6 @@ class _DetailScreenState extends State<DetailScreen> {
           color: _isBookmarked ? Colors.redAccent : Colors.white,
         ),
       ),
-
       body: FutureBuilder<MangaDetail>(
         future: _detail,
         builder: (context, snapshot) {
@@ -164,12 +193,15 @@ class _DetailScreenState extends State<DetailScreen> {
           if (snapshot.hasError) {
             return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.white)));
           }
+          if (!snapshot.hasData) {
+            return const Center(child: Text("Data tidak ditemukan", style: TextStyle(color: Colors.white)));
+          }
 
           final data = snapshot.data!;
 
           return CustomScrollView(
             slivers: [
-              // 1. HEADER (SLIVER APP BAR)
+              // 1. HEADER GAMBAR
               SliverAppBar(
                 expandedHeight: 300.0,
                 floating: false,
@@ -178,31 +210,33 @@ class _DetailScreenState extends State<DetailScreen> {
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
                     data.title.length > 20 ? "${data.title.substring(0, 20)}..." : data.title,
-                    style: const TextStyle(fontSize: 16, shadows: [Shadow(blurRadius: 10, color: Colors.black)]),
+                    style: const TextStyle(fontSize: 14, shadows: [Shadow(blurRadius: 10, color: Colors.black)]),
                   ),
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
+                      // Background Blur
                       CachedNetworkImage(
-                        imageUrl: data.cover,
+                        imageUrl: widget.cover, // Pakai widget.cover biar aman kalau API detail belum load
                         fit: BoxFit.cover,
+                        httpHeaders: _getHeaders(widget.source),
                         color: Colors.black.withOpacity(0.6),
                         colorBlendMode: BlendMode.darken,
-                        httpHeaders: const {"Referer": "https://google.com", "User-Agent": "Mozilla/5.0"},
                       ),
+                      // Gambar Utama
                       Center(
                         child: Container(
-                          height: 200,
-                          width: 140,
+                          height: 200, width: 140,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            boxShadow: const [BoxShadow(color: Colors.black, blurRadius: 10)],
+                            boxShadow: const [BoxShadow(color: Colors.black, blurRadius: 15)],
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: CachedNetworkImage(
-                                imageUrl: data.cover, fit: BoxFit.cover,
-                                httpHeaders: const {"Referer": "https://google.com", "User-Agent": "Mozilla/5.0"},
+                              imageUrl: widget.cover,
+                              httpHeaders: _getHeaders(widget.source),
+                              fit: BoxFit.cover,
                             ),
                           ),
                         ),
@@ -233,42 +267,36 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
               ),
 
-              // 3. LIST CHAPTER (DENGAN WARNA BIRU JIKA SUDAH DIBACA)
+              // 3. LIST CHAPTER
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final chapter = data.chapters[index];
-                    
-                    // 🔥 CEK APAKAH CHAPTER INI SUDAH DIBACA 🔥
                     final isRead = _readChapterIds.contains(chapter.id);
 
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        // Kalau sudah dibaca, backgroundnya jadi agak biru gelap
-                        color: isRead ? Colors.blue.withOpacity(0.15) : Colors.grey[900],
+                        color: isRead ? Colors.blue.withOpacity(0.1) : Colors.grey[900],
                         borderRadius: BorderRadius.circular(8),
-                        border: isRead ? Border.all(color: Colors.blueAccent.withOpacity(0.5)) : null,
+                        border: isRead ? Border.all(color: Colors.blue.withOpacity(0.3)) : null,
                       ),
                       child: ListTile(
                         title: Text(
                           chapter.title, 
                           style: TextStyle(
-                            // Teks jadi Biru jika sudah dibaca
-                            color: isRead ? Colors.blueAccent : Colors.white, 
+                            color: isRead ? Colors.blueAccent : Colors.white,
+                            fontWeight: isRead ? FontWeight.bold : FontWeight.normal,
                             fontSize: 14,
-                            fontWeight: isRead ? FontWeight.bold : FontWeight.normal
-                          )
+                          ),
                         ),
                         trailing: Icon(
-                          // Icon jadi Centang jika sudah dibaca
                           isRead ? Icons.check_circle : Icons.arrow_forward_ios, 
                           color: isRead ? Colors.blueAccent : Colors.grey, 
                           size: 16
                         ),
                         onTap: () async {
-                           // 🔥 NAVIGASI DENGAN AWAIT 🔥
-                           // Kita tunggu user kembali dari layar baca, lalu refresh warna tombolnya
+                           // Navigasi ke Baca
                            await Navigator.push(
                              context,
                              MaterialPageRoute(
@@ -276,15 +304,14 @@ class _DetailScreenState extends State<DetailScreen> {
                                  source: widget.source,
                                  chapterId: chapter.id,
                                  chapterTitle: chapter.title,
-                                 // 👇 Data Wajib untuk History
+                                 // Data untuk history
                                  mangaId: widget.mangaId,
                                  mangaTitle: widget.title,
                                  mangaCover: widget.cover,
                                ),
                              ),
                            );
-
-                           // 🔥 REFRESH WARNA SETELAH BACA 🔥
+                           // Refresh history setelah baca
                            _fetchReadChapters();
                         },
                       ),

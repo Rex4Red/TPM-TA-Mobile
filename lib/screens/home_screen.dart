@@ -110,13 +110,14 @@ class _SmartLoaderState extends State<SmartLoader> {
     _startAutoRetry();
   }
 
-  // Logika Retry Pintar (20x Percobaan)
+  // Logika Retry Pintar
   void _startAutoRetry() async {
     if (!mounted) return;
     setState(() { _isLoading = true; _isError = false; });
 
-    int maxAttempts = 20; // Naikkan jadi 20x (sekitar 60-80 detik)
+    int maxAttempts = 20;
     int attempt = 0;
+    int emptyCount = 0; // Counter khusus untuk respons kosong
 
     while (attempt < maxAttempts) {
       if (!mounted) return;
@@ -138,7 +139,16 @@ class _SmartLoaderState extends State<SmartLoader> {
           return; // Sukses! Keluar dari loop
         }
         
-        // Kalau kosong, anggap server masih booting
+        // Server merespons tapi data kosong
+        emptyCount++;
+        if (emptyCount >= 3) {
+          // Sudah 3x dapat respons kosong → kemungkinan scraper memang down
+          if (!mounted) return;
+          setState(() { _isLoading = false; _isError = true; 
+            _statusMsg = "Data tidak tersedia saat ini."; });
+          return;
+        }
+        
         throw Exception("Data Kosong");
 
       } catch (e) {

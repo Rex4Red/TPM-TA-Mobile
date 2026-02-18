@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'dart:math';
-import 'main_screen.dart'; // Ganti dengan halaman utama kamu
-import 'profile_screen.dart'; // Ganti jika halaman login ada di sini
+import 'main_screen.dart';
+import 'profile_screen.dart';
+import '../services/biometric_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,6 +23,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   double _glitchOffsetY = 0.0;
   Color _glitchColor = Colors.transparent;
   Timer? _glitchTimer;
+
+  // 🔒 Biometric
+  final BiometricService _biometricService = BiometricService();
+  bool _showRetryButton = false;
+  String _biometricStatus = '';
 
   @override
   void initState() {
@@ -53,11 +59,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   // --- LOGIKA GLITCH EFFECT ---
   void _startGlitchEffect() {
-    // Timer ini akan mengacak posisi gambar setiap 50 milidetik
-    // Memberikan efek "Rusak" atau "Cyberpunk"
     _glitchTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
       if (_controller.value > 0.7) {
-        // Hentikan glitch saat animasi sudah 70% (Stabilize)
         setState(() {
           _glitchOffsetX = 0;
           _glitchOffsetY = 0;
@@ -66,11 +69,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         timer.cancel();
       } else {
         setState(() {
-          // Random getaran kecil
           _glitchOffsetX = (Random().nextDouble() * 10) - 5; 
           _glitchOffsetY = (Random().nextDouble() * 10) - 5;
-          
-          // Kadang-kadang muncul warna merah/biru (Chromatic Aberration)
           if (Random().nextBool()) {
             _glitchColor = Colors.red.withOpacity(0.5);
           } else {
@@ -81,22 +81,58 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     });
   }
 
-  // --- LOGIKA NAVIGASI ---
+  // --- 🔒 LOGIKA NAVIGASI + BIOMETRIC ---
   void _checkAuthAndNavigate() async {
-    // Tunggu durasi animasi (3 detik) + sedikit buffer
     await Future.delayed(const Duration(seconds: 4));
-
     if (!mounted) return;
 
     final session = Supabase.instance.client.auth.currentSession;
-    
-    // Navigasi (Hapus halaman splash dari history stack)
+
+    if (session != null) {
+      // User sudah login, cek apakah biometric diaktifkan
+      final biometricEnabled = await _biometricService.isBiometricEnabled();
+
+      if (biometricEnabled) {
+        // 🔒 Biometric diaktifkan → minta verifikasi
+        await _performBiometricAuth();
+      } else {
+        // Biometric tidak aktif → langsung masuk
+        _navigateTo(const MainScreen());
+      }
+    } else {
+      // Belum login → ke halaman login
+      _navigateTo(const ProfileScreen());
+    }
+  }
+
+  // 🔒 Proses autentikasi biometric
+  Future<void> _performBiometricAuth() async {
+    if (!mounted) return;
+
+    setState(() {
+      _biometricStatus = 'Verifikasi sidik jari...';
+      _showRetryButton = false;
+    });
+
+    final isAuthenticated = await _biometricService.authenticate();
+
+    if (!mounted) return;
+
+    if (isAuthenticated) {
+      // ✅ Berhasil → masuk ke MainScreen
+      _navigateTo(const MainScreen());
+    } else {
+      // ❌ Gagal → tampilkan tombol retry
+      setState(() {
+        _biometricStatus = 'Verifikasi gagal. Coba lagi.';
+        _showRetryButton = true;
+      });
+    }
+  }
+
+  void _navigateTo(Widget screen) {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        // Jika sudah login ke MainScreen (Home), jika belum ke ProfileScreen (Login)
-        // Sesuaikan 'MainScreen' dengan nama class halaman utamamu (misal HomeScreen)
-        builder: (context) => session != null ? const MainScreen() : const ProfileScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => screen),
     );
   }
 
@@ -167,7 +203,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                 color: Colors.white,
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 5 * _controller.value, // Huruf melebar saat animasi
+                                letterSpacing: 5 * _controller.value,
                                 shadows: [
                                   Shadow(
                                     blurRadius: 10,
@@ -177,6 +213,42 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                 ],
                               ),
                             ),
+
+                          // 🔒 STATUS BIOMETRIC
+                          if (_biometricStatus.isNotEmpty) ...[
+                            const SizedBox(height: 30),
+                            Icon(
+                              Icons.fingerprint,
+                              size: 48,
+                              color: _showRetryButton ? Colors.redAccent : Colors.blueAccent,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              _biometricStatus,
+                              style: TextStyle(
+                                color: _showRetryButton ? Colors.redAccent : Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+
+                          // 🔒 TOMBOL RETRY BIOMETRIC
+                          if (_showRetryButton) ...[
+                            const SizedBox(height: 20),
+                            ElevatedButton.icon(
+                              onPressed: _performBiometricAuth,
+                              icon: const Icon(Icons.fingerprint, size: 20),
+                              label: const Text("Coba Lagi"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -190,5 +262,3 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     );
   }
 }
-
-// NOTE: Buat Dummy MainScreen kalau belum ada, biar tidak error importnya.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
+import '../services/biometric_service.dart';
 import 'favorite_screen.dart';
 import 'notification_settings_screen.dart';
 import 'history_screen.dart';
@@ -14,6 +15,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _auth = AuthService();
+  final BiometricService _biometricService = BiometricService();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -21,9 +23,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
 
+  // 🔒 Biometric
+  bool _isBiometricAvailable = false;
+  bool _isBiometricEnabled = false;
+
   // Variabel untuk menampung pesan error spesifik
   String? _emailError;
   String? _passwordError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricStatus();
+  }
+
+  // 🔒 Load status biometric saat init
+  void _loadBiometricStatus() async {
+    final available = await _biometricService.isBiometricAvailable();
+    final enabled = await _biometricService.isBiometricEnabled();
+    if (mounted) {
+      setState(() {
+        _isBiometricAvailable = available;
+        _isBiometricEnabled = enabled;
+      });
+    }
+  }
 
   // Fungsi Validasi & Submit
   void _submit() async {
@@ -182,6 +206,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationSettingsScreen()));
                     },
                   ),
+
+                  // 🔒 TOGGLE BIOMETRIC LOCK
+                  if (_isBiometricAvailable)
+                    SwitchListTile(
+                      secondary: Icon(
+                        Icons.fingerprint,
+                        color: _isBiometricEnabled ? Colors.greenAccent : Colors.grey,
+                      ),
+                      title: const Text("Kunci Biometrik", style: TextStyle(color: Colors.white)),
+                      subtitle: Text(
+                        _isBiometricEnabled
+                            ? "Sidik jari aktif saat membuka app"
+                            : "Gunakan sidik jari untuk membuka aplikasi",
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                      value: _isBiometricEnabled,
+                      activeColor: Colors.greenAccent,
+                      onChanged: (bool value) async {
+                        if (value) {
+                          // Saat mengaktifkan, minta verifikasi dulu
+                          final authenticated = await _biometricService.authenticate();
+                          if (authenticated) {
+                            await _biometricService.setBiometricEnabled(true);
+                            setState(() => _isBiometricEnabled = true);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("🔒 Kunci biometrik diaktifkan!"),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          }
+                        } else {
+                          await _biometricService.setBiometricEnabled(false);
+                          setState(() => _isBiometricEnabled = false);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("🔓 Kunci biometrik dinonaktifkan."),
+                                backgroundColor: Colors.grey,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    ),
+
                   const Divider(color: Colors.grey),
                   const SizedBox(height: 40),
                   SizedBox(

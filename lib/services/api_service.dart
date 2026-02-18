@@ -13,14 +13,12 @@ class ApiService {
 
   ApiService() {
     _dio = Dio(BaseOptions(
-      connectTimeout: const Duration(seconds: 60), 
-      receiveTimeout: const Duration(seconds: 60),
+      connectTimeout: const Duration(seconds: 15), 
+      receiveTimeout: const Duration(seconds: 15),
       headers: {
-        // User Agent Chrome Terbaru (Penting!)
         "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
         "Accept": "application/json",
       },
-      // 🔥 TERIMA SEMUA STATUS (JANGAN CRASH DULU KALAU 500) 🔥
       validateStatus: (status) => true, 
     ));
   }
@@ -32,6 +30,12 @@ class ApiService {
     String section = 'latest', 
     String? type, 
   }) async {
+    // 🚀 SHINIGAMI: Langsung ke Sansekai API (skip HuggingFace yg lambat)
+    if (source == 'shinigami') {
+      return await _fetchShinigamiListDirect(section: section, type: type, query: query);
+    }
+
+    // KOMIKINDO: Pakai HuggingFace server
     try {
       final Map<String, dynamic> params = {
         'source': source,
@@ -44,13 +48,65 @@ class ApiService {
 
       if (response.statusCode == 200 && response.data['status'] == true) {
         final List data = response.data['data'];
-        return data.map((json) => Manga.fromJson(json, source)).toList();
+        if (data.isNotEmpty) {
+          return data.map((json) => Manga.fromJson(json, source)).toList();
+        }
       }
       return [];
     } catch (e) {
-      print("❌ List Error: $e");
+      print("❌ List Error [$source]: $e");
       return []; 
     }
+  }
+
+  // 🚀 FETCH LIST SHINIGAMI LANGSUNG DARI SANSEKAI (cepat, ~2ms)
+  Future<List<Manga>> _fetchShinigamiListDirect({
+    String section = 'latest',
+    String? type,
+    String query = '',
+  }) async {
+    try {
+      // Search mode
+      if (query.isNotEmpty) {
+        final response = await _dio.get('$sansekaiUrl/komik/search', 
+          queryParameters: {'query': query});
+        if (response.statusCode == 200 && response.data['retcode'] == 0) {
+          return _mapSansekaiListToManga(response.data['data']);
+        }
+        return [];
+      }
+
+      // List mode (latest / recommended)
+      final Map<String, dynamic> params = {};
+      if (type != null && type.isNotEmpty) params['type'] = type;
+
+      final String endpoint = section == 'recommended' 
+          ? '$sansekaiUrl/komik/recommended' 
+          : '$sansekaiUrl/komik/latest';
+
+      final response = await _dio.get(endpoint, queryParameters: params);
+
+      if (response.statusCode == 200 && response.data['retcode'] == 0) {
+        return _mapSansekaiListToManga(response.data['data']);
+      }
+    } catch (e) {
+      print("❌ [Sansekai Direct] Error: $e");
+    }
+    return [];
+  }
+
+  // Helper: Map Sansekai list data → Manga model
+  List<Manga> _mapSansekaiListToManga(List<dynamic> data) {
+    return data.map((json) => Manga(
+      id: json['manga_id']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Tanpa Judul',
+      image: json['cover_image_url'] ?? json['cover_portrait_url'] ?? '',
+      chapter: json['latest_chapter_number'] != null 
+          ? 'Ch. ${json['latest_chapter_number']}' 
+          : 'Ch. ?',
+      score: json['user_rate']?.toString() ?? 'N/A',
+      type: 'shinigami',
+    )).toList();
   }
 
   // --- 2. AMBIL DETAIL MANGA (SYSTEM FALLBACK) ---

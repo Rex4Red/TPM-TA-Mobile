@@ -4,8 +4,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../services/api_service.dart';
 import '../models/manga_detail_model.dart';
 import '../services/bookmark_service.dart';
-import '../services/history_service.dart'; // Pastikan ada
-import 'read_screen.dart'; // Pastikan ada
+import '../services/history_service.dart';
+import '../services/notification_service.dart';
+import 'read_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final String source;
@@ -96,10 +97,11 @@ class _DetailScreenState extends State<DetailScreen> {
       // 5. Sinkronkan status UI
       if (mounted) setState(() => _isBookmarked = newStatus);
 
-      // 6. 🔥 LOGIKA KIRIM NOTIFIKASI 🔥
-      if (newStatus == true) { // Hanya kirim notif saat DITAMBAHKAN
-        _sendNotificationToUser(user.id, user.email ?? "User");
-      }
+      // 6. 🔔 KIRIM NOTIFIKASI LOKAL
+      NotificationService().showBookmarkNotification(
+        mangaTitle: widget.title,
+        isAdded: newStatus,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -113,48 +115,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
     } catch (e) {
       print("Bookmark Error: $e");
-      if (mounted) setState(() => _isBookmarked = !_isBookmarked); // Rollback jika error
+      if (mounted) setState(() => _isBookmarked = !_isBookmarked);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: $e")));
-    }
-  }
-
-  // Fungsi Terpisah untuk Ambil Setting & Kirim Notif
-  Future<void> _sendNotificationToUser(String userId, String userEmail) async {
-    try {
-      // A. Ambil Settingan User dari Supabase
-      final settings = await Supabase.instance.client
-          .from('user_settings')
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      if (settings != null) {
-        // Ambil token, jika isinya "EMPTY" anggap null
-        String? discord = settings['discord_webhook'];
-        if (discord == "EMPTY" || discord == "") discord = null;
-
-        String? tgToken = settings['telegram_bot_token'];
-        if (tgToken == "EMPTY" || tgToken == "") tgToken = null;
-
-        String? tgChatId = settings['telegram_chat_id'];
-        if (tgChatId == "EMPTY" || tgChatId == "") tgChatId = null;
-
-        // B. Panggil API Service untuk kirim notif
-        await ApiService().sendNotification(
-          title: widget.title,
-          cover: widget.cover,
-          userEmail: userEmail,
-          isAdded: true,
-          discordWebhook: discord,
-          telegramToken: tgToken,
-          telegramChatId: tgChatId,
-        );
-        print("Notifikasi dikirim ke ApiService");
-      } else {
-        print("User settings tidak ditemukan.");
-      }
-    } catch (e) {
-      print("Gagal kirim notifikasi: $e");
     }
   }
 

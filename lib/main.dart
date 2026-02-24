@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'screens/splash_screen.dart'; // ✅ Import Splash Screen
+import 'screens/splash_screen.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,6 +11,9 @@ void main() async {
     url: 'https://htgfkfatiqcqifhmjhso.supabase.co', 
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0Z2ZrZmF0aXFjcWlmaG1qaHNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NjMyNjQsImV4cCI6MjA4MzMzOTI2NH0.SL02F09ktvYxId4IWluy7ZIM7duxXsc8IB2hAQZulaE', 
   );
+
+  // 🔔 Inisialisasi Notification Service (Realtime Listener dimulai di MainScreen)
+  await NotificationService().init();
 
   runApp(const MyApp());
 }

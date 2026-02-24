@@ -3,6 +3,7 @@ import 'home_screen.dart';
 import 'favorite_screen.dart';
 import 'location_screen.dart';
 import 'tools_screen.dart';
+import '../services/notification_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -20,6 +21,13 @@ class _MainScreenState extends State<MainScreen> {
     const LocationScreen(),
     const ToolsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // 🔔 Start Realtime Listener SETELAH user login (dijamin ada currentUser)
+    NotificationService().startRealtimeListener();
+  }
 
   void _onItemTapped(int index) {
     setState(() {

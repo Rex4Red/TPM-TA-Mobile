@@ -6,8 +6,8 @@ class ApiService {
   // 1. URL SERVER KITA
   static const String serverUrl = 'https://rex4red-rex4red-komik-api-scrape.hf.space/api/mobile';
   
-  // 2. URL LANGSUNG SANSEKAI
-  static const String sansekaiUrl = 'https://api.sansekai.my.id/api';
+  // 2. URL SHINIGAMI API (Custom)
+  static const String shinigamiUrl = 'https://rex4red-shinigami-api.hf.space';
 
   late Dio _dio;
 
@@ -68,7 +68,7 @@ class ApiService {
     try {
       // Search mode
       if (query.isNotEmpty) {
-        final response = await _dio.get('$sansekaiUrl/komik/search', 
+        final response = await _dio.get('$shinigamiUrl/komik/search', 
           queryParameters: {'query': query});
         if (response.statusCode == 200 && response.data['retcode'] == 0) {
           return _mapSansekaiListToManga(response.data['data']);
@@ -81,8 +81,8 @@ class ApiService {
       if (type != null && type.isNotEmpty) params['type'] = type;
 
       final String endpoint = section == 'recommended' 
-          ? '$sansekaiUrl/komik/recommended' 
-          : '$sansekaiUrl/komik/latest';
+          ? '$shinigamiUrl/komik/recommended' 
+          : '$shinigamiUrl/komik/latest';
 
       final response = await _dio.get(endpoint, queryParameters: params);
 
@@ -162,11 +162,11 @@ class ApiService {
     String cleanId = rawId.replaceFirst('manga-', '');
     if (cleanId.contains('http')) cleanId = cleanId.split('/').last;
 
-    // 🔥 SAFE GET: Coba beberapa endpoint sekaligus tanpa throw error 500
+    // 🔥 SAFE GET: Coba detail + chapters sekaligus via custom API
     final results = await Future.wait([
-      _safeGet('$sansekaiUrl/komik/detail', {'manga_id': cleanId}),
-      _safeGet('$sansekaiUrl/komik/detail', {'manga_id': 'manga-$cleanId'}),
-      _safeGet('$sansekaiUrl/komik/chapterlist', {'manga_id': cleanId})
+      _safeGet('$shinigamiUrl/komik/detail/$cleanId', {}),
+      _safeGet('$shinigamiUrl/komik/detail/manga-$cleanId', {}),
+      _safeGet('$shinigamiUrl/komik/$cleanId/chapters', {})
     ]);
 
     var resDetail = results[0];
@@ -283,6 +283,19 @@ class ApiService {
   // --- 3. AMBIL GAMBAR CHAPTER ---
   Future<List<String>> fetchChapterImages({required String source, required String chapterId}) async {
     try {
+      // 🚀 Shinigami: langsung ke custom API
+      if (source == 'shinigami') {
+        final response = await _dio.get('$shinigamiUrl/chapter/$chapterId');
+        if (response.statusCode == 200 && response.data['retcode'] == 0) {
+          final chapterData = response.data['data'];
+          final String baseUrl = chapterData['base_url'] ?? '';
+          final String path = chapterData['chapter']?['path'] ?? '';
+          final List filenames = chapterData['chapter']?['data'] ?? [];
+          return filenames.map((f) => '$baseUrl$path$f').toList().cast<String>();
+        }
+      }
+
+      // KomikIndo: via HuggingFace server
       final response = await _dio.get(
         '$serverUrl/chapter', 
         queryParameters: {'source': source, 'id': chapterId}
@@ -292,38 +305,8 @@ class ApiService {
       }
       return [];
     } catch (e) {
+      print("❌ ChapterImages Error [$source]: $e");
       return [];
-    }
-  }
-
-  // --- 4. NOTIFIKASI ---
-  Future<void> sendNotification({
-    required String title,
-    required String cover,
-    required String userEmail,
-    required bool isAdded,
-    String? discordWebhook,
-    String? telegramToken,
-    String? telegramChatId,
-  }) async {
-
-    final statusText = isAdded ? "Ditambahkan ke Favorit ❤️" : "Dihapus dari Favorit 💔";
-    final message = "User: $userEmail\nAction: $statusText\nManga: $title";
-
-    if (discordWebhook != null && discordWebhook.isNotEmpty) {
-      try {
-        await _dio.post(discordWebhook, data: {
-          "content": message,
-          "embeds": [{"title": title, "description": statusText, "color": isAdded ? 5763719 : 15548997, "image": {"url": cover}}]
-        });
-      } catch (e) {}
-    }
-
-    if (telegramToken != null && telegramChatId != null && telegramToken.isNotEmpty) {
-      try {
-        await _dio.post("https://api.telegram.org/bot$telegramToken/sendMessage", 
-          data: {"chat_id": telegramChatId, "text": "$message\n$cover"});
-      } catch (e) {}
     }
   }
 }

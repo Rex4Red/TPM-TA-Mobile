@@ -202,7 +202,7 @@ class NotificationService {
 
   // ========== MANUAL CHECK (Langsung cek API dari Flutter) ==========
   static const String _shinigamiUrl = 'https://rex4red-shinigami-api.hf.space';
-  static const String _serverUrl = 'https://rex4red-rex4red-komik-api-scrape.hf.space/api/mobile';
+  static const String _komikindoUrl = 'https://rex4red-api-komikindo.hf.space';
   final Dio _dio = Dio(BaseOptions(
     connectTimeout: const Duration(seconds: 15),
     receiveTimeout: const Duration(seconds: 15),
@@ -329,41 +329,54 @@ class NotificationService {
     return null;
   }
 
-  // Cek chapter terbaru dari Komikindo API (via HuggingFace server)
+  // Cek chapter terbaru dari Komikindo API (api-komikindo.rex4red.my.id)
   Future<String?> _checkKomikindo(String mangaId, String source) async {
-    // Bersihkan manga_id: hapus /komik/ prefix dan trailing slash
+    // Bersihkan manga_id
     String cleanId = mangaId;
+    if (cleanId.contains('page=manga&id=')) {
+      cleanId = cleanId.split('id=').last;
+    }
     if (cleanId.startsWith('/komik/')) cleanId = cleanId.replaceFirst('/komik/', '');
     if (cleanId.startsWith('/')) cleanId = cleanId.substring(1);
     if (cleanId.endsWith('/')) cleanId = cleanId.substring(0, cleanId.length - 1);
 
-    print('🌐 [Komikindo] API call: $_serverUrl/komik/detail?source=$source&id=$cleanId');
+    print('🌐 [Komikindo] API call: $_komikindoUrl/komik/detail/$cleanId');
 
-    final response = await _dio.get(
-      '$_serverUrl/komik/detail',
-      queryParameters: {'source': source, 'id': cleanId},
-    );
+    final response = await _dio.get('$_komikindoUrl/komik/detail/$cleanId');
 
-    print('📦 [Komikindo] Response status: ${response.statusCode}, data_status: ${response.data['status']}');
+    print('📦 [Komikindo] Response status: ${response.statusCode}, success: ${response.data['success']}');
 
-    if (response.statusCode == 200 && response.data['status'] == true && response.data['data'] != null) {
+    if (response.statusCode == 200 && response.data['success'] == true && response.data['data'] != null) {
       final data = response.data['data'];
 
-      // Cari list chapter
-      List<dynamic>? chapters;
-      if (data['chapters'] is List) chapters = data['chapters'];
-      else if (data['chapter_list'] is List) chapters = data['chapter_list'];
-      else if (data['list_chapter'] is List) chapters = data['list_chapter'];
+      // Data bisa berupa Map (detail info) atau List (chapter list)
+      if (data is Map) {
+        // Cari list chapter dari berbagai key
+        List<dynamic>? chapters;
+        if (data['chapters'] is List) chapters = data['chapters'];
+        else if (data['chapter_list'] is List) chapters = data['chapter_list'];
+        else if (data['list_chapter'] is List) chapters = data['list_chapter'];
 
-      if (chapters != null && chapters.isNotEmpty) {
-        // Chapter pertama biasanya yang terbaru
-        final latestCh = chapters.first;
-        final latestTitle = latestCh['title']?.toString() ?? latestCh['name']?.toString();
-        print('📖 [Komikindo] Latest chapter: $latestTitle');
-        return latestTitle;
-      } else {
-        print('⚠️ [Komikindo] No chapters found in response');
+        if (chapters != null && chapters.isNotEmpty) {
+          final latestCh = chapters.first;
+          final latestTitle = latestCh['chapter']?.toString() ?? latestCh['title']?.toString() ?? latestCh['name']?.toString();
+          if (latestTitle != null) {
+            final result = latestTitle.startsWith('Chapter') ? latestTitle : 'Chapter $latestTitle';
+            print('📖 [Komikindo] Latest chapter: $result');
+            return result;
+          }
+        }
+      } else if (data is List && data.isNotEmpty) {
+        // Data langsung berupa list chapter
+        final latestCh = data.first;
+        final latestTitle = latestCh['chapter']?.toString() ?? latestCh['title']?.toString();
+        if (latestTitle != null) {
+          final result = latestTitle.startsWith('Chapter') ? latestTitle : 'Chapter $latestTitle';
+          print('📖 [Komikindo] Latest chapter: $result');
+          return result;
+        }
       }
+      print('⚠️ [Komikindo] No chapters found in response');
     }
     return null;
   }

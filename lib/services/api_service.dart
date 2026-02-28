@@ -3,8 +3,8 @@ import '../models/manga_model.dart';
 import '../models/manga_detail_model.dart';
 
 class ApiService {
-  // 1. URL SERVER KITA
-  static const String serverUrl = 'https://rex4red-rex4red-komik-api-scrape.hf.space/api/mobile';
+  // 1. URL KOMIKINDO API (Custom)
+  static const String komikindoUrl = 'https://rex4red-api-komikindo.hf.space';
   
   // 2. URL SHINIGAMI API (Custom)
   static const String shinigamiUrl = 'https://rex4red-shinigami-api.hf.space';
@@ -13,8 +13,8 @@ class ApiService {
 
   ApiService() {
     _dio = Dio(BaseOptions(
-      connectTimeout: const Duration(seconds: 15), 
-      receiveTimeout: const Duration(seconds: 15),
+      connectTimeout: const Duration(seconds: 30), 
+      receiveTimeout: const Duration(seconds: 30),
       headers: {
         "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
         "Accept": "application/json",
@@ -35,18 +35,27 @@ class ApiService {
       return await _fetchShinigamiListDirect(section: section, type: type, query: query);
     }
 
-    // KOMIKINDO: Pakai HuggingFace server
+    // KOMIKINDO: Pakai API baru (api-komikindo.rex4red.my.id)
     try {
-      final Map<String, dynamic> params = {
-        'source': source,
-        'q': query.isNotEmpty ? query : null,
-        'section': section,
-      };
-      if (type != null && type.isNotEmpty) params['type'] = type;
+      String endpoint;
+      Map<String, dynamic> params = {};
 
-      final response = await _dio.get('$serverUrl/list', queryParameters: params);
+      if (query.isNotEmpty) {
+        // Search mode
+        endpoint = '$komikindoUrl/komik/search';
+        params = {'q': query};
+      } else if (section == 'popular') {
+        endpoint = '$komikindoUrl/komik/popular';
+        params = {'page': 1};
+      } else {
+        // Default: latest
+        endpoint = '$komikindoUrl/komik/latest';
+        params = {'page': 1};
+      }
 
-      if (response.statusCode == 200 && response.data['status'] == true) {
+      final response = await _dio.get(endpoint, queryParameters: params);
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
         final List data = response.data['data'];
         if (data.isNotEmpty) {
           return data.map((json) => Manga.fromJson(json, source)).toList();
@@ -118,13 +127,12 @@ class ApiService {
           // COBA 1: DIRECT DARI HP
           return await _fetchShinigamiDirect(id);
         } catch (e) {
-          print("⚠️ Direct Gagal ($e). Beralih ke Server Proxy...");
-          // COBA 2: LEWAT SERVER (FALLBACK)
-          return await _fetchViaServer(source, id);
+          print("⚠️ Shinigami Direct Gagal: $e");
+          rethrow; // Server proxy lama sudah down
         }
       } else {
-        // KomikIndo langsung lewat server
-        return await _fetchViaServer(source, id);
+        // KomikIndo: langsung ke API baru
+        return await _fetchKomikindoDirect(id);
       }
     } catch (e) {
       print("❌ Detail Error Final: $e");
@@ -132,25 +140,26 @@ class ApiService {
     }
   }
 
-  // --- LOGIC FETCH VIA SERVER (NEXT.JS) ---
-  Future<MangaDetail> _fetchViaServer(String source, String id) async {
-    print("🌐 [2/2] Mengakses via Server: $id");
-    final response = await _dio.get(
-      '$serverUrl/komik/detail', 
-      queryParameters: {'source': source, 'id': id}
-    );
+  // --- LOGIC FETCH KOMIKINDO DIRECT ---
+  Future<MangaDetail> _fetchKomikindoDirect(String id) async {
+    // Bersihkan id: hapus prefix /komik/ dan trailing slash
+    String cleanId = id;
+    if (cleanId.contains('page=manga&id=')) {
+      cleanId = cleanId.split('id=').last;
+    }
+    if (cleanId.startsWith('/komik/')) cleanId = cleanId.replaceFirst('/komik/', '');
+    if (cleanId.startsWith('/')) cleanId = cleanId.substring(1);
+    if (cleanId.endsWith('/')) cleanId = cleanId.substring(0, cleanId.length - 1);
+
+    print("🌐 [Komikindo] Mengakses: $komikindoUrl/komik/detail/$cleanId");
+    final response = await _dio.get('$komikindoUrl/komik/detail/$cleanId');
     
     if (response.statusCode == 200) {
         var rawData = response.data;
-        if (rawData['status'] == true && rawData['data'] != null) {
-          // Deteksi sumber untuk mapping yang tepat
-          if (source == 'shinigami' || (rawData['source'] == 'Shinigami')) {
-             return _mapSansekaiToModel(rawData['data'], []); // Data server biasanya sudah lengkap
-          } else {
-             return _mapKomikIndoToModel(rawData['data']);
-          }
+        if (rawData['success'] == true && rawData['data'] != null) {
+          return _mapKomikIndoToModel(rawData['data']);
         } else {
-          throw Exception("Server Message: ${rawData['message']}");
+          throw Exception("API Error: ${rawData['error'] ?? 'Unknown'}");
         }
     } else {
       throw Exception("Server Error Code: ${response.statusCode}");
@@ -240,10 +249,12 @@ class ApiService {
   // --- MAPPING KOMIKINDO ---
   MangaDetail _mapKomikIndoToModel(Map<String, dynamic> data) {
     List<dynamic> rawChapters = [];
-    if (data['chapters'] != null && data['chapters'] is List) {
+    if (data['chapters'] is List) {
       rawChapters = data['chapters'];
-    } else if (data['chapter_list'] != null && data['chapter_list'] is List) rawChapters = data['chapter_list'];
-    else if (data['list_chapter'] != null && data['list_chapter'] is List) rawChapters = data['list_chapter'];
+    } else if (data['chapter_list'] is List) rawChapters = data['chapter_list'];
+    else if (data['list_chapter'] is List) rawChapters = data['list_chapter'];
+    // API baru: data langsung berupa list (nested 'data' sudah di-unwrap)
+    else if (data['data'] is List) rawChapters = data['data'];
 
     // Backup Plan
     if (rawChapters.isEmpty) {
@@ -256,23 +267,41 @@ class ApiService {
     }
 
     List<Chapter> finalChapters = rawChapters.map((ch) {
+      // Extract chapter ID dari berbagai format
       String rawId = ch['id']?.toString() ?? ch['endpoint']?.toString() ?? '';
+      
+      // API baru: ID ada di url query param (?page=chapter&id=404041)
+      if (rawId.isEmpty && ch['url'] != null) {
+        final url = ch['url'].toString();
+        final uri = Uri.tryParse(url);
+        if (uri != null && uri.queryParameters.containsKey('id')) {
+          rawId = uri.queryParameters['id']!;
+        }
+      }
+      
       if (rawId.startsWith('/')) rawId = rawId.substring(1); 
       if (rawId.contains('http')) {
          if (rawId.endsWith('/')) rawId = rawId.substring(0, rawId.length - 1);
          rawId = rawId.split('/').last;
       }
 
+      // Title: bisa dari 'title', 'name', atau construct dari 'chapter' field
+      String chTitle = ch['title']?.toString() ?? ch['name']?.toString() ?? '';
+      if (chTitle.isEmpty && ch['chapter'] != null) {
+        chTitle = 'Chapter ${ch['chapter']}';
+      }
+      if (chTitle.isEmpty) chTitle = 'Chapter ?';
+
       return Chapter(
-        title: ch['title']?.toString() ?? ch['name']?.toString() ?? 'Chapter ?', 
+        title: chTitle, 
         id: rawId, 
-        date: ch['date']?.toString() ?? ''
+        date: ch['date']?.toString() ?? ch['time']?.toString() ?? ''
       );
     }).toList();
 
     return MangaDetail(
       title: data['title']?.toString() ?? 'Tanpa Judul',
-      cover: data['cover']?.toString() ?? data['image']?.toString() ?? data['thumb']?.toString() ?? '',
+      cover: data['cover']?.toString() ?? data['img']?.toString() ?? data['image']?.toString() ?? data['thumb']?.toString() ?? '',
       synopsis: data['synopsis']?.toString() ?? 'Tidak ada sinopsis',
       author: data['author']?.toString() ?? 'Unknown',
       status: data['status']?.toString() ?? 'Unknown',
@@ -295,13 +324,25 @@ class ApiService {
         }
       }
 
-      // KomikIndo: via HuggingFace server
-      final response = await _dio.get(
-        '$serverUrl/chapter', 
-        queryParameters: {'source': source, 'id': chapterId}
-      );
-      if (response.statusCode == 200 && response.data['status'] == true) {
-        return List<String>.from(response.data['data']);
+      // KomikIndo: via API baru
+      String cleanChapterId = chapterId;
+      if (cleanChapterId.contains('page=chapter&id=')) {
+        cleanChapterId = cleanChapterId.split('id=').last;
+      }
+      final response = await _dio.get('$komikindoUrl/chapter/$cleanChapterId');
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'];
+        if (data != null && data is Map) {
+          // API response: data.image = [url1, url2, ...]
+          final images = data['image'];
+          if (images != null && images is List) {
+            return List<String>.from(images);
+          }
+        }
+        // Fallback: coba langsung di root
+        if (response.data['images'] != null && response.data['images'] is List) {
+          return List<String>.from(response.data['images']);
+        }
       }
       return [];
     } catch (e) {

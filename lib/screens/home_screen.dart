@@ -96,8 +96,9 @@ class SmartLoader extends StatefulWidget {
   final String source;
   final String section;
   final String? type;
-  final Widget Function(List<Manga>) onSuccess;
+  final Widget Function(List<Manga>, {VoidCallback? onLoadMore, bool isLoadingMore, bool hasMore}) onSuccess;
   final Widget Function()? onEmpty;
+  final bool enablePagination;
 
   const SmartLoader({
     super.key,
@@ -106,6 +107,7 @@ class SmartLoader extends StatefulWidget {
     this.type,
     required this.onSuccess,
     this.onEmpty,
+    this.enablePagination = false,
   });
 
   @override
@@ -117,6 +119,9 @@ class _SmartLoaderState extends State<SmartLoader> {
   bool _isLoading = true;
   String _statusMsg = "Memuat data...";
   bool _isError = false;
+  int _currentPage = 1;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
 
   @override
   void initState() {
@@ -130,6 +135,9 @@ class _SmartLoaderState extends State<SmartLoader> {
     setState(() {
       _isLoading = true;
       _isError = false;
+      _currentPage = 1;
+      _data = [];
+      _hasMore = true;
     });
 
     int maxAttempts = 20;
@@ -157,6 +165,7 @@ class _SmartLoaderState extends State<SmartLoader> {
           setState(() {
             _data = data;
             _isLoading = false;
+            _hasMore = data.length >= 5;
           });
           return; // Sukses! Keluar dari loop
         }
@@ -191,6 +200,43 @@ class _SmartLoaderState extends State<SmartLoader> {
         // Tunggu 3 detik sebelum coba lagi
         await Future.delayed(const Duration(seconds: 3));
       }
+    }
+  }
+
+  // Load More Pages
+  void _loadMore() async {
+    if (_isLoadingMore || !_hasMore || !widget.enablePagination) return;
+    
+    setState(() => _isLoadingMore = true);
+    
+    try {
+      final nextPage = _currentPage + 1;
+      final newData = await ApiService().fetchMangaList(
+        source: widget.source,
+        section: widget.section,
+        type: widget.type,
+        page: nextPage,
+      );
+
+      if (!mounted) return;
+      
+      if (newData.isEmpty) {
+        setState(() {
+          _hasMore = false;
+          _isLoadingMore = false;
+        });
+      } else {
+        setState(() {
+          _data.addAll(newData);
+          _currentPage = nextPage;
+          _isLoadingMore = false;
+          _hasMore = newData.length >= 5;
+        });
+      }
+    } catch (e) {
+      print("❌ LoadMore Error: $e");
+      if (!mounted) return;
+      setState(() => _isLoadingMore = false);
     }
   }
 
@@ -249,7 +295,12 @@ class _SmartLoaderState extends State<SmartLoader> {
     }
 
     // 3. Tampilan Sukses
-    return widget.onSuccess(_data);
+    return widget.onSuccess(
+      _data,
+      onLoadMore: widget.enablePagination ? _loadMore : null,
+      isLoadingMore: _isLoadingMore,
+      hasMore: _hasMore,
+    );
   }
 }
 
@@ -306,7 +357,7 @@ class _ShinigamiHomeViewState extends State<ShinigamiHomeView> {
                   source: 'shinigami',
                   section: 'recommended',
                   type: _selectedRecType,
-                  onSuccess: (data) => CarouselSlider(
+                  onSuccess: (data, {onLoadMore, isLoadingMore = false, hasMore = false}) => CarouselSlider(
                     options: CarouselOptions(
                       height: 220,
                       aspectRatio: 16 / 9,
@@ -352,25 +403,50 @@ class _ShinigamiHomeViewState extends State<ShinigamiHomeView> {
               source: 'shinigami',
               section: 'latest',
               type: _selectedLatestType,
-              onSuccess: (data) => GridView.builder(
-                shrinkWrap: true, // Agar bisa masuk dalam ScrollView
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 0.65,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                ),
-                itemCount: data.length,
-                itemBuilder: (context, index) => ModernMangaCard(
-                  manga: data[index],
-                  sourceMaster: 'shinigami',
-                ),
+              enablePagination: true,
+              onSuccess: (data, {onLoadMore, isLoadingMore = false, hasMore = false}) => Column(
+                children: [
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 0.65,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                    ),
+                    itemCount: data.length,
+                    itemBuilder: (context, index) => ModernMangaCard(
+                      manga: data[index],
+                      sourceMaster: 'shinigami',
+                    ),
+                  ),
+                  if (isLoadingMore)
+                    const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(color: Colors.blueAccent),
+                    ),
+                  if (!isLoadingMore && hasMore && onLoadMore != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: ElevatedButton.icon(
+                        onPressed: onLoadMore,
+                        icon: const Icon(Icons.expand_more),
+                        label: const Text('Muat Lebih Banyak'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          const SliverToBoxAdapter(child: SizedBox(height: 150)),
         ],
       ),
     );
@@ -465,7 +541,7 @@ class _KomikIndoHomeViewState extends State<KomikIndoHomeView> {
                   key: Key("pop_$_key"), // Key unik biar refresh jalan
                   source: 'komikindo',
                   section: 'popular',
-                  onSuccess: (data) => CarouselSlider(
+                  onSuccess: (data, {onLoadMore, isLoadingMore = false, hasMore = false}) => CarouselSlider(
                     options: CarouselOptions(
                       height: 220,
                       aspectRatio: 16 / 9,
@@ -509,25 +585,50 @@ class _KomikIndoHomeViewState extends State<KomikIndoHomeView> {
               key: Key("latest_$_key"),
               source: 'komikindo',
               section: 'latest',
-              onSuccess: (data) => GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 0.65,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                ),
-                itemCount: data.length,
-                itemBuilder: (context, index) => ModernMangaCard(
-                  manga: data[index],
-                  sourceMaster: 'komikindo',
-                ),
+              enablePagination: true,
+              onSuccess: (data, {onLoadMore, isLoadingMore = false, hasMore = false}) => Column(
+                children: [
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 0.65,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                    ),
+                    itemCount: data.length,
+                    itemBuilder: (context, index) => ModernMangaCard(
+                      manga: data[index],
+                      sourceMaster: 'komikindo',
+                    ),
+                  ),
+                  if (isLoadingMore)
+                    const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(color: Colors.blueAccent),
+                    ),
+                  if (!isLoadingMore && hasMore && onLoadMore != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: ElevatedButton.icon(
+                        onPressed: onLoadMore,
+                        icon: const Icon(Icons.expand_more),
+                        label: const Text('Muat Lebih Banyak'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          const SliverToBoxAdapter(child: SizedBox(height: 150)),
         ],
       ),
     );

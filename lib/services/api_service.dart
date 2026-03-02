@@ -28,11 +28,12 @@ class ApiService {
     String source = 'shinigami', 
     String query = '',
     String section = 'latest', 
-    String? type, 
+    String? type,
+    int page = 1,
   }) async {
     // 🚀 SHINIGAMI: Langsung ke Sansekai API (skip HuggingFace yg lambat)
     if (source == 'shinigami') {
-      return await _fetchShinigamiListDirect(section: section, type: type, query: query);
+      return await _fetchShinigamiListDirect(section: section, type: type, query: query, page: page);
     }
 
     // KOMIKINDO: Pakai API baru (api-komikindo.rex4red.my.id)
@@ -43,14 +44,14 @@ class ApiService {
       if (query.isNotEmpty) {
         // Search mode
         endpoint = '$komikindoUrl/komik/search';
-        params = {'q': query};
+        params = {'q': query, 'page': page};
       } else if (section == 'popular') {
         endpoint = '$komikindoUrl/komik/popular';
-        params = {'page': 1};
+        params = {'page': page};
       } else {
         // Default: latest
         endpoint = '$komikindoUrl/komik/latest';
-        params = {'page': 1};
+        params = {'page': page};
       }
 
       final response = await _dio.get(endpoint, queryParameters: params);
@@ -73,6 +74,7 @@ class ApiService {
     String section = 'latest',
     String? type,
     String query = '',
+    int page = 1,
   }) async {
     try {
       // Search mode
@@ -88,6 +90,7 @@ class ApiService {
       // List mode (latest / recommended)
       final Map<String, dynamic> params = {};
       if (type != null && type.isNotEmpty) params['type'] = type;
+      if (page > 1) params['page'] = page;
 
       final String endpoint = section == 'recommended' 
           ? '$shinigamiUrl/komik/recommended' 
@@ -223,7 +226,12 @@ class ApiService {
     }
 
     String synopsisStr = detail['synopsis']?.toString() ?? detail['description']?.toString() ?? 'Tidak ada sinopsis';
-    String authorStr = detail['author']?.toString() ?? detail['authors']?.toString() ?? 'Unknown';
+    // Author bisa di top-level (author/authors) atau di taxonomy.Author
+    dynamic rawAuthor = detail['author'] ?? detail['authors'];
+    if (rawAuthor == null && detail['taxonomy'] != null) {
+      rawAuthor = detail['taxonomy']['Author'];
+    }
+    String authorStr = _extractAuthor(rawAuthor);
 
     // Gabungkan chapter external (jika ada) atau internal
     List<dynamic> finalRawChapters = chapters.isNotEmpty ? chapters : (detail['chapters'] ?? []);
@@ -303,7 +311,7 @@ class ApiService {
       title: data['title']?.toString() ?? 'Tanpa Judul',
       cover: data['cover']?.toString() ?? data['img']?.toString() ?? data['image']?.toString() ?? data['thumb']?.toString() ?? '',
       synopsis: data['synopsis']?.toString() ?? 'Tidak ada sinopsis',
-      author: data['author']?.toString() ?? 'Unknown',
+      author: _extractAuthor(data['author']),
       status: data['status']?.toString() ?? 'Unknown',
       chapters: finalChapters,
     );
@@ -329,12 +337,21 @@ class ApiService {
       if (cleanChapterId.contains('page=chapter&id=')) {
         cleanChapterId = cleanChapterId.split('id=').last;
       }
+      print('📖 [ChapterImages] chapterId raw: $chapterId');
+      print('📖 [ChapterImages] chapterId clean: $cleanChapterId');
+      print('📖 [ChapterImages] URL: $komikindoUrl/chapter/$cleanChapterId');
+      
       final response = await _dio.get('$komikindoUrl/chapter/$cleanChapterId');
+      print('📖 [ChapterImages] Status: ${response.statusCode}, success: ${response.data['success']}');
+      print('📖 [ChapterImages] Data type: ${response.data['data']?.runtimeType}');
+      print('📖 [ChapterImages] Data keys: ${response.data['data'] is Map ? (response.data['data'] as Map).keys.toList() : "NOT A MAP"}');
+      
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'];
         if (data != null && data is Map) {
           // API response: data.image = [url1, url2, ...]
           final images = data['image'];
+          print('📖 [ChapterImages] images count: ${images?.length ?? 0}');
           if (images != null && images is List) {
             return List<String>.from(images);
           }
@@ -344,10 +361,27 @@ class ApiService {
           return List<String>.from(response.data['images']);
         }
       }
+      print('📖 [ChapterImages] Returning empty list');
       return [];
     } catch (e) {
       print("❌ ChapterImages Error [$source]: $e");
       return [];
     }
+  }
+
+  // Helper: Extract author name from various formats (string, list, map)
+  String _extractAuthor(dynamic authorData) {
+    if (authorData == null) return 'Unknown';
+    if (authorData is String) return authorData.isEmpty ? 'Unknown' : authorData;
+    if (authorData is List) {
+      if (authorData.isEmpty) return 'Unknown';
+      final names = authorData.map((a) {
+        if (a is Map) return a['name']?.toString() ?? '';
+        return a.toString();
+      }).where((n) => n.isNotEmpty).toList();
+      return names.isEmpty ? 'Unknown' : names.join(', ');
+    }
+    if (authorData is Map) return authorData['name']?.toString() ?? 'Unknown';
+    return authorData.toString();
   }
 }

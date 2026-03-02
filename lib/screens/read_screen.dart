@@ -129,30 +129,34 @@ class _ReadScreenState extends State<ReadScreen> {
 
           final images = snapshot.data!;
 
-          return ListView.builder(
-            controller: _scrollController,
-            cacheExtent: 5000,
-            itemCount: images.length,
-            itemBuilder: (context, index) {
-              return CachedNetworkImage(
-                imageUrl: images[index],
-                fit: BoxFit.fitWidth,
-                placeholder: (context, url) => Container(
-                  height: 200,
-                  color: Colors.grey[900],
-                  child: const Center(child: CircularProgressIndicator(color: Colors.grey)),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  height: 100,
-                  color: Colors.grey[900],
-                  child: const Icon(Icons.broken_image, color: Colors.red),
-                ),
-                httpHeaders: const {
-                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                  "Referer": "https://google.com"
-                },
-              );
-            },
+          return InteractiveViewer(
+            minScale: 1.0,
+            maxScale: 5.0,
+            child: ListView.builder(
+              controller: _scrollController,
+              cacheExtent: 5000,
+              itemCount: images.length,
+              itemBuilder: (context, index) {
+                return CachedNetworkImage(
+                  imageUrl: images[index],
+                  fit: BoxFit.fitWidth,
+                  placeholder: (context, url) => Container(
+                    height: 200,
+                    color: Colors.grey[900],
+                    child: const Center(child: CircularProgressIndicator(color: Colors.grey)),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    height: 100,
+                    color: Colors.grey[900],
+                    child: const Icon(Icons.broken_image, color: Colors.red),
+                  ),
+                  httpHeaders: const {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Referer": "https://google.com"
+                  },
+                );
+              },
+            ),
           );
         },
       ),

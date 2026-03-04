@@ -5,6 +5,7 @@ import '../services/biometric_service.dart';
 import 'favorite_screen.dart';
 import 'notification_settings_screen.dart';
 import 'history_screen.dart';
+import 'main_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -22,6 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoginMode = true;
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _isNavigating = false;
 
   // 🔒 Biometric
   bool _isBiometricAvailable = false;
@@ -76,18 +78,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       if (_isLoginMode) {
         await _auth.signIn(email: email, password: password);
-        // Login Sukses
+        // Login Sukses → langsung ke Home
+        if (mounted) {
+          setState(() => _isNavigating = true);
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+            (route) => false,
+          );
+          return;
+        }
       } else {
         await _auth.signUp(email: email, password: password);
         if (mounted) {
-           _showSuccessDialog("Berhasil Daftar!", "Silakan login dengan akun barumu.");
-           setState(() => _isLoginMode = true);
+          _showSuccessDialog(
+            "Berhasil Daftar!",
+            "Silakan login dengan akun barumu.",
+          );
+          setState(() => _isLoginMode = true);
         }
       }
     } catch (e) {
       // 3. Tangkap Error dari Supabase & Tampilkan di Field
       final msg = e.toString().toLowerCase();
-      
+
       setState(() {
         if (msg.contains("invalid login credentials")) {
           _passwordError = "Email atau Password salah!";
@@ -98,7 +111,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _passwordError = "Format password salah.";
         } else {
           // Error lain (misal koneksi)
-          _showErrorDialog("Terjadi Kesalahan", msg.replaceAll("exception:", ""));
+          _showErrorDialog(
+            "Terjadi Kesalahan",
+            msg.replaceAll("exception:", ""),
+          );
         }
       });
     } finally {
@@ -118,13 +134,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text("OK", style: TextStyle(color: Colors.blue)),
-          )
+          ),
         ],
       ),
     );
   }
 
-    // Dialog Cantik untuk Sukses
+  // Dialog Cantik untuk Sukses
   void _showSuccessDialog(String title, String content) {
     showDialog(
       context: context,
@@ -136,7 +152,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text("OK", style: TextStyle(color: Colors.blue)),
-          )
+          ),
         ],
       ),
     );
@@ -148,6 +164,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       stream: _auth.authStateChanges,
       builder: (context, snapshot) {
         final session = snapshot.data?.session;
+
+        // --- Jika sedang navigasi ke Home, tampilkan layar hitam ---
+        if (_isNavigating) {
+          return const Scaffold(backgroundColor: Colors.black);
+        }
 
         // --- TAMPILAN JIKA SUDAH LOGIN (PROFIL) ---
         if (session != null) {
@@ -169,41 +190,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       border: Border.all(color: Colors.blue, width: 3),
                       color: Colors.grey[900],
                     ),
-                    child: const Icon(Icons.person, size: 80, color: Colors.white),
+                    child: const Icon(
+                      Icons.person,
+                      size: 80,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Text(
                     session.user.email ?? "User",
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  const Text("Member Rex4Red", style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    "Member Rex4Red",
+                    style: TextStyle(color: Colors.grey),
+                  ),
 
                   const SizedBox(height: 30),
                   ListTile(
-                    leading: const Icon(Icons.favorite, color: Colors.redAccent),
-                    title: const Text("Koleksi Favorit Saya", style: TextStyle(color: Colors.white)),
-                    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                    leading: const Icon(
+                      Icons.favorite,
+                      color: Colors.redAccent,
+                    ),
+                    title: const Text(
+                      "Koleksi Favorit Saya",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.grey,
+                      size: 16,
+                    ),
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoriteScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FavoriteScreen(),
+                        ),
+                      );
                     },
                   ),
 
                   ListTile(
-                    leading: const Icon(Icons.history, color: Colors.blueAccent), // Icon Jam/History
-                    title: const Text("Riwayat Baca", style: TextStyle(color: Colors.white)),
-                    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                    leading: const Icon(
+                      Icons.history,
+                      color: Colors.blueAccent,
+                    ), // Icon Jam/History
+                    title: const Text(
+                      "Riwayat Baca",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.grey,
+                      size: 16,
+                    ),
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HistoryScreen(),
+                        ),
+                      );
                     },
                   ),
 
                   ListTile(
-                    leading: const Icon(Icons.notifications, color: Colors.amber),
-                    title: const Text("Atur Notifikasi", style: TextStyle(color: Colors.white)),
-                    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                    leading: const Icon(
+                      Icons.notifications,
+                      color: Colors.amber,
+                    ),
+                    title: const Text(
+                      "Atur Notifikasi",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.grey,
+                      size: 16,
+                    ),
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationSettingsScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const NotificationSettingsScreen(),
+                        ),
+                      );
                     },
                   ),
 
@@ -212,28 +290,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SwitchListTile(
                       secondary: Icon(
                         Icons.fingerprint,
-                        color: _isBiometricEnabled ? Colors.greenAccent : Colors.grey,
+                        color: _isBiometricEnabled
+                            ? Colors.greenAccent
+                            : Colors.grey,
                       ),
-                      title: const Text("Kunci Biometrik", style: TextStyle(color: Colors.white)),
+                      title: const Text(
+                        "Kunci Biometrik",
+                        style: TextStyle(color: Colors.white),
+                      ),
                       subtitle: Text(
                         _isBiometricEnabled
                             ? "Sidik jari aktif saat membuka app"
                             : "Gunakan sidik jari untuk membuka aplikasi",
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
                       ),
                       value: _isBiometricEnabled,
                       activeColor: Colors.greenAccent,
                       onChanged: (bool value) async {
                         if (value) {
                           // Saat mengaktifkan, minta verifikasi dulu
-                          final authenticated = await _biometricService.authenticate();
+                          final authenticated = await _biometricService
+                              .authenticate();
                           if (authenticated) {
                             await _biometricService.setBiometricEnabled(true);
                             setState(() => _isBiometricEnabled = true);
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text("🔒 Kunci biometrik diaktifkan!"),
+                                  content: Text(
+                                    "🔒 Kunci biometrik diaktifkan!",
+                                  ),
                                   backgroundColor: Colors.green,
                                 ),
                               );
@@ -245,7 +334,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text("🔓 Kunci biometrik dinonaktifkan."),
+                                content: Text(
+                                  "🔓 Kunci biometrik dinonaktifkan.",
+                                ),
                                 backgroundColor: Colors.grey,
                               ),
                             );
@@ -263,11 +354,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onPressed: () => _auth.signOut(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red[900],
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                       ),
-                      child: const Text("LOGOUT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        "LOGOUT",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -286,7 +385,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // 1. LOGO / HEADER
-                  const Icon(Icons.menu_book_rounded, size: 80, color: Colors.blueAccent),
+                  const Icon(
+                    Icons.menu_book_rounded,
+                    size: 80,
+                    color: Colors.blueAccent,
+                  ),
                   const SizedBox(height: 10),
                   const Text(
                     "Rex4Red",
@@ -300,7 +403,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    _isLoginMode ? "Selamat datang kembali!" : "Bergabunglah dengan kami!",
+                    _isLoginMode
+                        ? "Selamat datang kembali!"
+                        : "Bergabunglah dengan kami!",
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.grey),
                   ),
@@ -323,12 +428,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     isPassword: true,
                     errorText: _passwordError,
                   ),
-                  
+
                   const SizedBox(height: 40),
 
                   // 4. TOMBOL ACTION
                   _isLoading
-                      ? const Center(child: CircularProgressIndicator(color: Colors.blueAccent))
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.blueAccent,
+                          ),
+                        )
                       : Container(
                           height: 55,
                           decoration: BoxDecoration(
@@ -337,7 +446,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               colors: [Colors.blueAccent, Colors.purpleAccent],
                             ),
                             boxShadow: [
-                              BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))
+                              BoxShadow(
+                                color: Colors.blue.withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
                             ],
                           ),
                           child: ElevatedButton(
@@ -345,15 +458,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             child: Text(
                               _isLoginMode ? "MASUK SEKARANG" : "DAFTAR AKUN",
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ),
-                  
+
                   const SizedBox(height: 20),
 
                   // 5. SWITCH LOGIN/REGISTER
@@ -361,7 +480,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        _isLoginMode ? "Belum punya akun?" : "Sudah punya akun?",
+                        _isLoginMode
+                            ? "Belum punya akun?"
+                            : "Sudah punya akun?",
                         style: const TextStyle(color: Colors.grey),
                       ),
                       TextButton(
@@ -374,9 +495,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         },
                         child: Text(
                           _isLoginMode ? "Daftar" : "Login",
-                          style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.blueAccent,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ],
@@ -406,24 +530,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: InputDecoration(
             labelText: label,
             labelStyle: const TextStyle(color: Colors.grey),
-            prefixIcon: Icon(icon, color: errorText != null ? Colors.redAccent : Colors.grey),
-            
+            prefixIcon: Icon(
+              icon,
+              color: errorText != null ? Colors.redAccent : Colors.grey,
+            ),
+
             // Warna Background Input
             filled: true,
             fillColor: Colors.grey[900],
-            
+
             // Border Normal
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[800]!),
             ),
-            
+
             // Border saat diklik (Fokus)
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Colors.blueAccent),
             ),
-            
+
             // Border saat ERROR (Merah)
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -435,16 +562,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
 
             // Pesan Error Muncul di Sini (Bukan SnackBar)
-            errorText: errorText, 
-            
+            errorText: errorText,
+
             // Tombol Intip Password
             suffixIcon: isPassword
                 ? IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: Colors.grey,
                     ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   )
                 : null,
           ),

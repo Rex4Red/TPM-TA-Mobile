@@ -124,7 +124,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                         Switch(
                           value: _notifEnabled,
                           onChanged: _toggleNotification,
-                          activeColor: Colors.blue,
+                          activeThumbColor: Colors.blue,
                         ),
                       ],
                     ),

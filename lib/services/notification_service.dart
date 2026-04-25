@@ -353,8 +353,9 @@ class NotificationService {
       if (data is Map) {
         // Cari list chapter dari berbagai key
         List<dynamic>? chapters;
-        if (data['chapters'] is List) chapters = data['chapters'];
-        else if (data['chapter_list'] is List) chapters = data['chapter_list'];
+        if (data['chapters'] is List) {
+          chapters = data['chapters'];
+        } else if (data['chapter_list'] is List) chapters = data['chapter_list'];
         else if (data['list_chapter'] is List) chapters = data['list_chapter'];
 
         if (chapters != null && chapters.isNotEmpty) {

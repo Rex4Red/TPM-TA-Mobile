@@ -163,10 +163,22 @@ class _ShakeGachaViewState extends State<ShakeGachaView> {
 
     if (!mounted) return;
 
-    // Mapping Data sesuai API KomikIndo
+    // Mapping Data sesuai API KomikIndo BARU
     final String title = winner['title'] ?? "Unknown Title";
-    final String cover = winner['image'] ?? winner['thumb'] ?? ""; 
-    final String endpoint = winner['endpoint'] ?? ""; 
+    // API returns 'img', not 'image'
+    final String cover = winner['img'] ?? winner['image'] ?? winner['thumb'] ?? winner['thumbnail'] ?? winner['cover'] ?? ""; 
+    
+    // Extract manga ID dari URL: "https://kmkindo.click/?page=manga&id=27758"
+    String endpoint = '';
+    if (winner['url'] != null) {
+      final uri = Uri.tryParse(winner['url'].toString());
+      if (uri != null && uri.queryParameters.containsKey('id')) {
+        endpoint = uri.queryParameters['id']!;
+      } else {
+        endpoint = winner['url'].toString().split('/').last;
+      }
+    }
+    endpoint = endpoint.isNotEmpty ? endpoint : (winner['endpoint'] ?? winner['id']?.toString() ?? '');
     
     // Tentukan Source secara eksplisit
     const String source = 'komikindo'; 

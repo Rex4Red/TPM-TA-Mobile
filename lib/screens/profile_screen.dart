@@ -308,7 +308,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       value: _isBiometricEnabled,
-                      activeColor: Colors.greenAccent,
+                      activeThumbColor: Colors.greenAccent,
                       onChanged: (bool value) async {
                         if (value) {
                           // Saat mengaktifkan, minta verifikasi dulu

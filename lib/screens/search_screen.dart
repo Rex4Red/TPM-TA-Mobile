@@ -72,8 +72,9 @@ class _SearchScreenState extends State<SearchScreen> {
     if (titleLower == query) return 100; // Sama persis
     if (titleLower.startsWith(query)) return 75; // Diawali query
     // Mengandung query sebagai kata utuh
-    if (RegExp(r'\b' + RegExp.escape(query) + r'\b').hasMatch(titleLower))
+    if (RegExp(r'\b' + RegExp.escape(query) + r'\b').hasMatch(titleLower)) {
       return 50;
+    }
     if (titleLower.contains(query)) return 25; // Mengandung substring
     return 0;
   }

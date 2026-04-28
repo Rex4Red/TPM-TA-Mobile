@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rex4red_mobile/screens/full_Screen_cover.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/api_service.dart';
@@ -186,19 +187,38 @@ class _DetailScreenState extends State<DetailScreen> {
                         colorBlendMode: BlendMode.darken,
                       ),
                       // Gambar Utama
+                      // Gambar Utama
                       Center(
-                        child: Container(
-                          height: 200, width: 140,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: const [BoxShadow(color: Colors.black, blurRadius: 15)],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: CachedNetworkImage(
-                              imageUrl: widget.cover,
-                              httpHeaders: _getHeaders(widget.source),
-                              fit: BoxFit.cover,
+                        child: GestureDetector( // 1. Tambahkan pembungkus klik
+                          onTap: () {
+                            // 2. Aksi pindah ke screen baru (halaman Full Screen Gyro)
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FullScreenCover( // Pastikan nama class screen gyro kamu sama
+                                  imageUrl: widget.cover,
+                                  source: widget.source,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Hero( // 3. Opsional: Pakai Hero agar ada animasi "terbang" ke full screen
+                            tag: 'manga_cover_hero', 
+                            child: Container(
+                              height: 200, 
+                              width: 140,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: const [BoxShadow(color: Colors.black, blurRadius: 15)],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: CachedNetworkImage(
+                                  imageUrl: widget.cover,
+                                  httpHeaders: _getHeaders(widget.source),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
                           ),
                         ),

@@ -62,7 +62,15 @@ class ShakeGachaView extends StatefulWidget {
 }
 
 class _ShakeGachaViewState extends State<ShakeGachaView> {
-  final Dio _dio = Dio();
+  final Dio _dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 15),
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36",
+      "Accept": "application/json",
+    },
+    validateStatus: (status) => true,
+  ));
   List<dynamic> _gachaPool = [];
   bool _isPoolReady = false;
   
@@ -82,44 +90,51 @@ class _ShakeGachaViewState extends State<ShakeGachaView> {
     super.dispose();
   }
 
-  // 🔥 FUNGSI FETCH API ASLI (KOMIKINDO) 🔥
+  // 🔥 FUNGSI FETCH API (KOMIKINDO - API BARU) 🔥
   Future<void> _fetchGachaPool() async {
     try {
-      // Menggunakan API KomikIndo milikmu (Endpoint Popular)
-      final response = await _dio.get("https://rex4red-komik-api-scrape.hf.space/komik/popular");
+      // Menggunakan API KomikIndo BARU (sama dengan api_service.dart)
+      final response = await _dio.get("https://rex4red-api-komikindo.hf.space/komik/popular");
       
       if (response.statusCode == 200) {
-        // Cek struktur response. Biasanya API scraper langsung mengembalikan List atau Map
-        // Asumsi: API mengembalikan List langsung atau Map dengan key 'data'
         final data = response.data;
         
         if (mounted) {
           setState(() {
-            // Jika data langsung berupa List
-            if (data is List) {
-              _gachaPool = data;
-            } 
-            // Jika data dibungkus key 'data' (sesuaikan dengan output API aslimu)
-            else if (data is Map && data['data'] is List) {
+            // API baru: { success: true, data: [...] }
+            if (data is Map && data['success'] == true && data['data'] is List) {
               _gachaPool = data['data'];
             }
+            // Fallback: data langsung berupa List
+            else if (data is List) {
+              _gachaPool = data;
+            }
             
-            _isPoolReady = true;
+            _isPoolReady = _gachaPool.isNotEmpty;
           });
         }
+        
+        // Jika data kosong, pakai fallback
+        if (_gachaPool.isEmpty) _useFallbackData();
+      } else {
+        _useFallbackData();
       }
     } catch (e) {
       print("Gagal fetch gacha pool: $e");
-      // Fallback Data jika API down (supaya tidak crash)
-      if(mounted) {
-        setState(() {
-          _gachaPool = [
-            {'title': 'One Piece', 'image': 'https://upload.wikimedia.org/wikipedia/en/9/90/One_Piece%2C_Volume_61_Cover_%28Japanese%29.jpg', 'endpoint': 'one-piece'},
-            {'title': 'Jujutsu Kaisen', 'image': 'https://upload.wikimedia.org/wikipedia/en/4/46/Jujutsu_Kaisen_cover.jpg', 'endpoint': 'jujutsu-kaisen'},
-          ];
-          _isPoolReady = true;
-        });
-      }
+      _useFallbackData();
+    }
+  }
+
+  void _useFallbackData() {
+    if(mounted) {
+      setState(() {
+        _gachaPool = [
+          {'title': 'One Piece', 'image': 'https://upload.wikimedia.org/wikipedia/en/9/90/One_Piece%2C_Volume_61_Cover_%28Japanese%29.jpg', 'endpoint': 'one-piece'},
+          {'title': 'Jujutsu Kaisen', 'image': 'https://upload.wikimedia.org/wikipedia/en/4/46/Jujutsu_Kaisen_cover.jpg', 'endpoint': 'jujutsu-kaisen'},
+          {'title': 'Naruto', 'image': 'https://upload.wikimedia.org/wikipedia/en/9/94/NasaruVolume1.jpg', 'endpoint': 'naruto'},
+        ];
+        _isPoolReady = true;
+      });
     }
   }
 

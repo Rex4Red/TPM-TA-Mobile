@@ -2,6 +2,8 @@
 
 A new Flutter project.
 
+> 🔔 **Bot Notif Test** — Testing GitHub notification bot (26 April 2026)
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

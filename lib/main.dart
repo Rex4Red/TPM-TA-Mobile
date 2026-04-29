@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'screens/splash_screen.dart';
 import 'services/notification_service.dart';
+import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inisialisasi Supabase
+  // 📦 Inisialisasi Hive (Local Database)
+  await Hive.initFlutter();
+  await AuthService.initHive();
+
+  // ☁️ Inisialisasi Supabase (Cloud - untuk bookmark, history, notif)
   await Supabase.initialize(
     url: 'https://htgfkfatiqcqifhmjhso.supabase.co', 
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0Z2ZrZmF0aXFjcWlmaG1qaHNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NjMyNjQsImV4cCI6MjA4MzMzOTI2NH0.SL02F09ktvYxId4IWluy7ZIM7duxXsc8IB2hAQZulaE', 
   );
 
-  // 🔔 Inisialisasi Notification Service (Realtime Listener dimulai di MainScreen)
+  // 🔔 Inisialisasi Notification Service
   await NotificationService().init();
 
   runApp(const MyApp());

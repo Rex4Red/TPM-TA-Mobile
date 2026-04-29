@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'dart:math';
 import 'main_screen.dart';
 import 'profile_screen.dart';
 import '../services/biometric_service.dart';
+import '../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -26,6 +26,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   // 🔒 Biometric
   final BiometricService _biometricService = BiometricService();
+  final AuthService _authService = AuthService();
   bool _showRetryButton = false;
   String _biometricStatus = '';
 
@@ -81,14 +82,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     });
   }
 
-  // --- 🔒 LOGIKA NAVIGASI + BIOMETRIC ---
+  // --- 🔒 LOGIKA NAVIGASI + BIOMETRIC (CEK DARI HIVE) ---
   void _checkAuthAndNavigate() async {
     await Future.delayed(const Duration(seconds: 4));
     if (!mounted) return;
 
-    final session = Supabase.instance.client.auth.currentSession;
+    // 📦 Cek session dari HIVE (local database)
+    final isLoggedIn = _authService.isLoggedIn;
 
-    if (session != null) {
+    if (isLoggedIn) {
+      // Silent re-login ke Supabase (biar bookmark/history tetap jalan)
+      await _authService.silentSupabaseLogin();
+
       // User sudah login, cek apakah biometric diaktifkan
       final biometricEnabled = await _biometricService.isBiometricEnabled();
 

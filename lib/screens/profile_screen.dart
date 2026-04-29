@@ -112,6 +112,137 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // 📝 Tampilkan bottom sheet Saran & Kesan
+  void _showSaranKesanSheet() {
+    final kesanCtrl = TextEditingController(text: _auth.kesan);
+    final saranCtrl = TextEditingController(text: _auth.saran);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20, right: 20, top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 15),
+              const Center(
+                child: Text(
+                  "📝 Saran & Kesan",
+                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 5),
+              Center(
+                child: Text(
+                  "Mata Kuliah Teknologi Pemrograman Mobile",
+                  style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 25),
+
+              // KESAN
+              const Text("Kesan", style: TextStyle(color: Colors.tealAccent, fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: kesanCtrl,
+                maxLines: 4,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: "Tuliskan kesan kamu selama mengikuti mata kuliah ini...",
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: Colors.grey[850],
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey[700]!),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.tealAccent),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // SARAN
+              const Text("Saran", style: TextStyle(color: Colors.tealAccent, fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: saranCtrl,
+                maxLines: 4,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: "Tuliskan saran kamu untuk mata kuliah ini...",
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: Colors.grey[850],
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey[700]!),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.tealAccent),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 25),
+
+              // TOMBOL SIMPAN
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    await _auth.saveSaranKesan(
+                      kesan: kesanCtrl.text.trim(),
+                      saran: saranCtrl.text.trim(),
+                    );
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    if (mounted) {
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("✅ Saran & Kesan berhasil disimpan!"),
+                          backgroundColor: Colors.teal,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.save, color: Colors.white),
+                  label: const Text("Simpan", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal[700],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // 🔒 Load status biometric saat init
   void _loadBiometricStatus() async {
     final available = await _biometricService.isBiometricAvailable();
@@ -379,6 +510,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                   },
                 ),
+
+              // 📝 SARAN & KESAN
+              ListTile(
+                leading: const Icon(Icons.rate_review, color: Colors.tealAccent),
+                title: const Text("Saran & Kesan", style: TextStyle(color: Colors.white)),
+                subtitle: Text(
+                  _auth.kesan.isNotEmpty ? "Sudah diisi ✅" : "Belum diisi",
+                  style: TextStyle(color: _auth.kesan.isNotEmpty ? Colors.tealAccent : Colors.grey, fontSize: 12),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                onTap: _showSaranKesanSheet,
+              ),
 
               const Divider(color: Colors.grey),
               const SizedBox(height: 40),

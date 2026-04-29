@@ -155,6 +155,35 @@ class AuthService {
     await sessionBox.delete('profilePhoto_$email');
   }
 
+  // ==========================================
+  // SARAN & KESAN (HIVE LOKAL)
+  // ==========================================
+
+  /// Ambil kesan user
+  String get kesan {
+    final sessionBox = Hive.box(_sessionBoxName);
+    final email = currentEmail;
+    if (email == null) return '';
+    return sessionBox.get('kesan_$email', defaultValue: '') ?? '';
+  }
+
+  /// Ambil saran user
+  String get saran {
+    final sessionBox = Hive.box(_sessionBoxName);
+    final email = currentEmail;
+    if (email == null) return '';
+    return sessionBox.get('saran_$email', defaultValue: '') ?? '';
+  }
+
+  /// Simpan kesan & saran ke Hive
+  Future<void> saveSaranKesan({required String kesan, required String saran}) async {
+    final sessionBox = Hive.box(_sessionBoxName);
+    final email = currentEmail;
+    if (email == null) return;
+    await sessionBox.put('kesan_$email', kesan);
+    await sessionBox.put('saran_$email', saran);
+  }
+
   /// Kompatibilitas: return User Supabase jika ada (untuk service lain)
   User? get currentUser => _supabase.auth.currentUser;
 

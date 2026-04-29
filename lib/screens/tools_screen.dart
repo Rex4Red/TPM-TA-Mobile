@@ -285,13 +285,81 @@ class CurrencyConverterView extends StatefulWidget {
 class _CurrencyConverterViewState extends State<CurrencyConverterView> {
   final TextEditingController _controller = TextEditingController();
   double _result = 0.0;
-  final Map<String, double> _rates = {'IDR': 1, 'USD': 15850, 'JPY': 105, 'GBP': 20100, 'KRW': 11.5};
-  String _fromCurrency = 'JPY'; String _toCurrency = 'IDR';   
+  String _fromCurrency = 'JPY'; 
+  String _toCurrency = 'IDR';
+  bool _isLoadingRates = true;
+  String? _lastUpdated;
+
+  // Fallback rates (dipakai jika API gagal)
+  Map<String, double> _rates = {'IDR': 1, 'USD': 16300, 'JPY': 108, 'GBP': 20600, 'KRW': 11.8};
+
+  // Mata uang yang relevan untuk komik
+  final List<String> _supportedCurrencies = ['IDR', 'USD', 'JPY', 'GBP', 'KRW', 'EUR', 'CNY', 'SGD', 'MYR', 'THB'];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLiveRates();
+  }
+
+  /// 🌐 Fetch kurs real-time dari API
+  Future<void> _fetchLiveRates() async {
+    setState(() => _isLoadingRates = true);
+    try {
+      final dio = Dio();
+      dio.options.connectTimeout = const Duration(seconds: 10);
+      dio.options.receiveTimeout = const Duration(seconds: 10);
+
+      final response = await dio.get('https://api.exchangerate-api.com/v4/latest/IDR');
+      
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final allRates = Map<String, dynamic>.from(data['rates']);
+        
+        // Filter hanya mata uang yang kita dukung
+        final filteredRates = <String, double>{};
+        for (final currency in _supportedCurrencies) {
+          if (allRates.containsKey(currency)) {
+            // API memberi rate dari IDR → currency, kita perlu kebalikannya
+            // Contoh: 1 IDR = 0.00925 JPY → 1 JPY = 1/0.00925 = ~108 IDR
+            final rate = (allRates[currency] is int)
+                ? (allRates[currency] as int).toDouble()
+                : allRates[currency] as double;
+            filteredRates[currency] = rate;
+          }
+        }
+
+        if (mounted) {
+          setState(() {
+            // Simpan rates mentah (basis IDR = 1)
+            _rates = filteredRates;
+            _lastUpdated = data['date'] ?? 'Hari ini';
+            _isLoadingRates = false;
+          });
+          _convert();
+        }
+      }
+    } catch (e) {
+      print('⚠️ Gagal fetch kurs: $e (pakai fallback)');
+      if (mounted) {
+        setState(() {
+          _isLoadingRates = false;
+          _lastUpdated = 'Offline (data lama)';
+        });
+      }
+    }
+  }
 
   void _convert() {
     double amount = double.tryParse(_controller.text) ?? 0;
-    double inIdr = amount * _rates[_fromCurrency]!;
-    double finalResult = inIdr / _rates[_toCurrency]!;
+    // Konversi: amount * (rate_from / rate_to)
+    // Rate basis: 1 IDR = x currency
+    // Jadi: 1 currency_from = (1/rate_from) IDR
+    // amount currency_from = amount / rate_from IDR
+    // Lalu IDR ke currency_to = (amount / rate_from) * rate_to
+    double rateFrom = _rates[_fromCurrency] ?? 1;
+    double rateTo = _rates[_toCurrency] ?? 1;
+    double finalResult = amount * (rateTo / rateFrom);
     setState(() { _result = finalResult; });
   }
 
@@ -301,18 +369,100 @@ class _CurrencyConverterViewState extends State<CurrencyConverterView> {
       padding: const EdgeInsets.all(20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _buildHeader("Cek Harga Komik Fisik 📚", "Cek estimasi harga komik impor."),
+          
+          // 🌐 Status kurs
+          if (_lastUpdated != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(children: [
+                Icon(Icons.update, size: 14, color: Colors.grey[600]),
+                const SizedBox(width: 5),
+                Text("Kurs: $_lastUpdated", style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                const Spacer(),
+                GestureDetector(
+                  onTap: _fetchLiveRates,
+                  child: Row(children: [
+                    Icon(Icons.refresh, size: 14, color: Colors.blueAccent.withOpacity(0.7)),
+                    const SizedBox(width: 3),
+                    Text("Refresh", style: TextStyle(color: Colors.blueAccent.withOpacity(0.7), fontSize: 11)),
+                  ]),
+                ),
+              ]),
+            ),
+          
           const SizedBox(height: 25),
-          TextField(controller: _controller, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold), decoration: InputDecoration(labelText: "Masukkan Harga", labelStyle: TextStyle(color: Colors.grey[400]), prefixIcon: const Icon(Icons.attach_money, color: Colors.blueAccent), enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey[800]!), borderRadius: BorderRadius.circular(12)), focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.blueAccent)), filled: true, fillColor: Colors.grey[900]), onChanged: (val) => _convert()),
-          const SizedBox(height: 20),
-          Row(children: [Expanded(child: _buildDropdown("Dari", _fromCurrency, (val) { setState(() => _fromCurrency = val!); _convert(); })), const Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Icon(Icons.arrow_forward, color: Colors.grey)), Expanded(child: _buildDropdown("Ke", _toCurrency, (val) { setState(() => _toCurrency = val!); _convert(); }))]),
-          const SizedBox(height: 30),
-          Container(width: double.infinity, padding: const EdgeInsets.all(20), decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.blue[900]!, Colors.blue[800]!]), borderRadius: BorderRadius.circular(20)), child: Column(children: [const Text("Estimasi Harga:", style: TextStyle(color: Colors.white70)), Text(NumberFormat.currency(locale: 'id', symbol: _toCurrency == 'IDR' ? 'Rp ' : '$_toCurrency ', decimalDigits: 2).format(_result), style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold))])),
+          
+          if (_isLoadingRates)
+            const Center(child: Padding(
+              padding: EdgeInsets.all(30),
+              child: Column(children: [
+                CircularProgressIndicator(color: Colors.blueAccent),
+                SizedBox(height: 10),
+                Text("Mengambil kurs terbaru...", style: TextStyle(color: Colors.grey)),
+              ]),
+            ))
+          else ...[
+            TextField(
+              controller: _controller, 
+              keyboardType: TextInputType.number, 
+              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold), 
+              decoration: InputDecoration(
+                labelText: "Masukkan Harga", 
+                labelStyle: TextStyle(color: Colors.grey[400]), 
+                prefixIcon: const Icon(Icons.attach_money, color: Colors.blueAccent), 
+                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey[800]!), borderRadius: BorderRadius.circular(12)), 
+                focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.blueAccent)), 
+                filled: true, 
+                fillColor: Colors.grey[900],
+              ), 
+              onChanged: (val) => _convert(),
+            ),
+            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(child: _buildDropdown("Dari", _fromCurrency, (val) { setState(() => _fromCurrency = val!); _convert(); })), 
+              const Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Icon(Icons.arrow_forward, color: Colors.grey)), 
+              Expanded(child: _buildDropdown("Ke", _toCurrency, (val) { setState(() => _toCurrency = val!); _convert(); })),
+            ]),
+            const SizedBox(height: 30),
+            Container(
+              width: double.infinity, 
+              padding: const EdgeInsets.all(20), 
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.blue[900]!, Colors.blue[800]!]), 
+                borderRadius: BorderRadius.circular(20),
+              ), 
+              child: Column(children: [
+                const Text("Estimasi Harga:", style: TextStyle(color: Colors.white70)), 
+                Text(
+                  NumberFormat.currency(locale: 'id', symbol: _toCurrency == 'IDR' ? 'Rp ' : '$_toCurrency ', decimalDigits: 2).format(_result), 
+                  style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                ),
+              ]),
+            ),
+          ],
       ]),
     );
   }
 
   Widget _buildDropdown(String label, String value, Function(String?) onChanged) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(color: Colors.grey)), const SizedBox(height: 5), Container(padding: const EdgeInsets.symmetric(horizontal: 12), decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey[800]!)), child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: value, dropdownColor: Colors.grey[900], isExpanded: true, style: const TextStyle(color: Colors.white, fontSize: 16), items: _rates.keys.map((String key) => DropdownMenuItem<String>(value: key, child: Text(key))).toList(), onChanged: onChanged)) )]);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: const TextStyle(color: Colors.grey)), 
+      const SizedBox(height: 5), 
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12), 
+        decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey[800]!)), 
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: value, 
+            dropdownColor: Colors.grey[900], 
+            isExpanded: true, 
+            style: const TextStyle(color: Colors.white, fontSize: 16), 
+            items: _supportedCurrencies.map((String key) => DropdownMenuItem<String>(value: key, child: Text(key))).toList(), 
+            onChanged: onChanged,
+          ),
+        ),
+      ),
+    ]);
   }
   Widget _buildHeader(String title, String subtitle) { return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 5), Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13))]); }
 }

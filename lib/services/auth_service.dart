@@ -127,6 +127,34 @@ class AuthService {
     return sessionBox.get('currentEmail');
   }
 
+  // ==========================================
+  // PROFILE PHOTO (HIVE LOKAL)
+  // ==========================================
+
+  /// Ambil path foto profil user
+  String? get profilePhotoPath {
+    final sessionBox = Hive.box(_sessionBoxName);
+    final email = currentEmail;
+    if (email == null) return null;
+    return sessionBox.get('profilePhoto_$email');
+  }
+
+  /// Simpan path foto profil ke Hive
+  Future<void> setProfilePhoto(String path) async {
+    final sessionBox = Hive.box(_sessionBoxName);
+    final email = currentEmail;
+    if (email == null) return;
+    await sessionBox.put('profilePhoto_$email', path);
+  }
+
+  /// Hapus foto profil
+  Future<void> removeProfilePhoto() async {
+    final sessionBox = Hive.box(_sessionBoxName);
+    final email = currentEmail;
+    if (email == null) return;
+    await sessionBox.delete('profilePhoto_$email');
+  }
+
   /// Kompatibilitas: return User Supabase jika ada (untuk service lain)
   User? get currentUser => _supabase.auth.currentUser;
 

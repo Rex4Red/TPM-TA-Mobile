@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
 import '../services/biometric_service.dart';
 import 'favorite_screen.dart';
@@ -32,10 +34,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _emailError;
   String? _passwordError;
 
+  // 📸 Image Picker
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
     _loadBiometricStatus();
+  }
+
+  // 📸 Pilih foto profil
+  void _showImageOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(10)),
+              ),
+              const SizedBox(height: 15),
+              const Text("Foto Profil", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 15),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Colors.blueAccent),
+                title: const Text("Ambil dari Kamera", style: TextStyle(color: Colors.white)),
+                onTap: () { Navigator.pop(ctx); _pickImage(ImageSource.camera); },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Colors.greenAccent),
+                title: const Text("Pilih dari Galeri", style: TextStyle(color: Colors.white)),
+                onTap: () { Navigator.pop(ctx); _pickImage(ImageSource.gallery); },
+              ),
+              if (_auth.profilePhotoPath != null)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.redAccent),
+                  title: const Text("Hapus Foto", style: TextStyle(color: Colors.redAccent)),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await _auth.removeProfilePhoto();
+                    if (mounted) setState(() {});
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 80,
+      );
+      if (image != null) {
+        await _auth.setProfilePhoto(image.path);
+        if (mounted) setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memilih foto: $e"), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   // 🔒 Load status biometric saat init
@@ -183,17 +257,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.blue, width: 3),
-                  color: Colors.grey[900],
-                ),
-                child: const Icon(
-                  Icons.person,
-                  size: 80,
-                  color: Colors.white,
+              // 📸 FOTO PROFIL (TAP UNTUK GANTI)
+              GestureDetector(
+                onTap: _showImageOptions,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.blue, width: 3),
+                        color: Colors.grey[900],
+                        image: _auth.profilePhotoPath != null
+                            ? DecorationImage(
+                                image: FileImage(File(_auth.profilePhotoPath!)),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: _auth.profilePhotoPath == null
+                          ? const Icon(Icons.person, size: 60, color: Colors.white)
+                          : null,
+                    ),
+                    // Badge kamera
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black, width: 2),
+                        ),
+                        child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 20),

@@ -478,12 +478,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Icons.fingerprint,
                     color: _isBiometricEnabled ? Colors.greenAccent : Colors.grey,
                   ),
-                  title: const Text("Kunci Biometrik", style: TextStyle(color: Colors.white)),
-                  subtitle: Text(
-                    _isBiometricEnabled
-                        ? "Sidik jari aktif saat membuka app"
-                        : "Gunakan sidik jari untuk membuka aplikasi",
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                   value: _isBiometricEnabled,
                   activeThumbColor: Colors.greenAccent,
@@ -628,6 +622,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+
                   Text(
                     _isLoginMode ? "Belum punya akun?" : "Sudah punya akun?",
                     style: const TextStyle(color: Colors.grey),

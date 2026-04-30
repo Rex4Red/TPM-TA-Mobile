@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen>
           return [
             SliverAppBar(
               title: const Text(
-                "Rex4Red Manga",
+                "MangaMotion",
                 style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
               ),
               centerTitle: false,

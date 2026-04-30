@@ -1,5 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
 import '../services/biometric_service.dart';
 import 'favorite_screen.dart';
@@ -33,10 +34,213 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _emailError;
   String? _passwordError;
 
+  // 📸 Image Picker
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
     _loadBiometricStatus();
+  }
+
+  // 📸 Pilih foto profil
+  void _showImageOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(10)),
+              ),
+              const SizedBox(height: 15),
+              const Text("Foto Profil", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 15),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Colors.blueAccent),
+                title: const Text("Ambil dari Kamera", style: TextStyle(color: Colors.white)),
+                onTap: () { Navigator.pop(ctx); _pickImage(ImageSource.camera); },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Colors.greenAccent),
+                title: const Text("Pilih dari Galeri", style: TextStyle(color: Colors.white)),
+                onTap: () { Navigator.pop(ctx); _pickImage(ImageSource.gallery); },
+              ),
+              if (_auth.profilePhotoPath != null)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.redAccent),
+                  title: const Text("Hapus Foto", style: TextStyle(color: Colors.redAccent)),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await _auth.removeProfilePhoto();
+                    if (mounted) setState(() {});
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 80,
+      );
+      if (image != null) {
+        await _auth.setProfilePhoto(image.path);
+        if (mounted) setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memilih foto: $e"), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  // 📝 Tampilkan bottom sheet Saran & Kesan
+  void _showSaranKesanSheet() {
+    final kesanCtrl = TextEditingController(text: _auth.kesan);
+    final saranCtrl = TextEditingController(text: _auth.saran);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20, right: 20, top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 15),
+              const Center(
+                child: Text(
+                  "📝 Saran & Kesan",
+                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 5),
+              Center(
+                child: Text(
+                  "Mata Kuliah Teknologi Pemrograman Mobile",
+                  style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 25),
+
+              // KESAN
+              const Text("Kesan", style: TextStyle(color: Colors.tealAccent, fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: kesanCtrl,
+                maxLines: 4,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: "Tuliskan kesan kamu selama mengikuti mata kuliah ini...",
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: Colors.grey[850],
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey[700]!),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.tealAccent),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // SARAN
+              const Text("Saran", style: TextStyle(color: Colors.tealAccent, fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: saranCtrl,
+                maxLines: 4,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: "Tuliskan saran kamu untuk mata kuliah ini...",
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: Colors.grey[850],
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey[700]!),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.tealAccent),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 25),
+
+              // TOMBOL SIMPAN
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    await _auth.saveSaranKesan(
+                      kesan: kesanCtrl.text.trim(),
+                      saran: saranCtrl.text.trim(),
+                    );
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    if (mounted) {
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("✅ Saran & Kesan berhasil disimpan!"),
+                          backgroundColor: Colors.teal,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.save, color: Colors.white),
+                  label: const Text("Simpan", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal[700],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // 🔒 Load status biometric saat init
@@ -51,7 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Fungsi Validasi & Submit
+  // Fungsi Validasi & Submit (HIVE-BASED)
   void _submit() async {
     // 1. Reset Error Dulu
     setState(() {
@@ -77,6 +281,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       if (_isLoginMode) {
+        // 🔥 LOGIN via Hive (+ Supabase silent di background)
         await _auth.signIn(email: email, password: password);
         // Login Sukses → langsung ke Home
         if (mounted) {
@@ -88,6 +293,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return;
         }
       } else {
+        // 🔥 REGISTER via Hive (+ Supabase silent di background)
         await _auth.signUp(email: email, password: password);
         if (mounted) {
           _showSuccessDialog(
@@ -98,14 +304,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
     } catch (e) {
-      // 3. Tangkap Error dari Supabase & Tampilkan di Field
+      // 3. Tangkap Error & Tampilkan di Field
       final msg = e.toString().toLowerCase();
 
       setState(() {
         if (msg.contains("invalid login credentials")) {
           _passwordError = "Email atau Password salah!";
           _emailError = " "; // Kasih error kosong biar border jadi merah juga
-        } else if (msg.contains("user already registered")) {
+        } else if (msg.contains("sudah terdaftar") || msg.contains("already registered")) {
           _emailError = "Email ini sudah terdaftar.";
         } else if (msg.contains("password")) {
           _passwordError = "Format password salah.";
@@ -160,355 +366,286 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<AuthState>(
-      stream: _auth.authStateChanges,
-      builder: (context, snapshot) {
-        final session = snapshot.data?.session;
+    // 📦 Cek login dari Hive (bukan Supabase StreamBuilder)
+    final isLoggedIn = _auth.isLoggedIn;
 
-        // --- Jika sedang navigasi ke Home, tampilkan layar hitam ---
-        if (_isNavigating) {
-          return const Scaffold(backgroundColor: Colors.black);
-        }
+    // --- Jika sedang navigasi ke Home, tampilkan layar hitam ---
+    if (_isNavigating) {
+      return const Scaffold(backgroundColor: Colors.black);
+    }
 
-        // --- TAMPILAN JIKA SUDAH LOGIN (PROFIL) ---
-        if (session != null) {
-          return Scaffold(
-            backgroundColor: Colors.black,
-            appBar: AppBar(
-              title: const Text("Profil Saya"),
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-            ),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.blue, width: 3),
-                      color: Colors.grey[900],
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      size: 80,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    session.user.email ?? "User",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Member MangaMotion",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-
-                  const SizedBox(height: 30),
-                  ListTile(
-                    leading: const Icon(
-                      Icons.favorite,
-                      color: Colors.redAccent,
-                    ),
-                    title: const Text(
-                      "Koleksi Favorit Saya",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    trailing: const Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.grey,
-                      size: 16,
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const FavoriteScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  ListTile(
-                    leading: const Icon(
-                      Icons.history,
-                      color: Colors.blueAccent,
-                    ), // Icon Jam/History
-                    title: const Text(
-                      "Riwayat Baca",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    trailing: const Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.grey,
-                      size: 16,
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HistoryScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  ListTile(
-                    leading: const Icon(
-                      Icons.notifications,
-                      color: Colors.amber,
-                    ),
-                    title: const Text(
-                      "Atur Notifikasi",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    trailing: const Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.grey,
-                      size: 16,
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const NotificationSettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  // 🔒 TOGGLE BIOMETRIC LOCK
-                  if (_isBiometricAvailable)
-                    SwitchListTile(
-                      secondary: Icon(
-                        Icons.fingerprint,
-                        color: _isBiometricEnabled
-                            ? Colors.greenAccent
-                            : Colors.grey,
+    // --- TAMPILAN JIKA SUDAH LOGIN (PROFIL) ---
+    if (isLoggedIn) {
+      final userEmail = _auth.currentEmail ?? 'User';
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title: const Text("Profil Saya"),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 📸 FOTO PROFIL (TAP UNTUK GANTI)
+              GestureDetector(
+                onTap: _showImageOptions,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.blue, width: 3),
+                        color: Colors.grey[900],
+                        image: _auth.profilePhotoPath != null
+                            ? DecorationImage(
+                                image: FileImage(File(_auth.profilePhotoPath!)),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
-                      title: const Text(
-                        "Kunci Biometrik",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      subtitle: Text(
-                        _isBiometricEnabled
-                            ? "Sidik jari aktif saat membuka app"
-                            : "Gunakan sidik jari untuk membuka aplikasi",
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
-                      ),
-                      value: _isBiometricEnabled,
-                      activeThumbColor: Colors.greenAccent,
-                      onChanged: (bool value) async {
-                        if (value) {
-                          // Saat mengaktifkan, minta verifikasi dulu
-                          final authenticated = await _biometricService
-                              .authenticate();
-                          if (authenticated) {
-                            await _biometricService.setBiometricEnabled(true);
-                            setState(() => _isBiometricEnabled = true);
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    "🔒 Kunci biometrik diaktifkan!",
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            }
-                          }
-                        } else {
-                          await _biometricService.setBiometricEnabled(false);
-                          setState(() => _isBiometricEnabled = false);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "🔓 Kunci biometrik dinonaktifkan.",
-                                ),
-                                backgroundColor: Colors.grey,
-                              ),
-                            );
-                          }
-                        }
-                      },
+                      child: _auth.profilePhotoPath == null
+                          ? const Icon(Icons.person, size: 60, color: Colors.white)
+                          : null,
                     ),
-
-                  const Divider(color: Colors.grey),
-                  const SizedBox(height: 40),
-                  SizedBox(
-                    width: 200,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () => _auth.signOut(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[900],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                    // Badge kamera
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black, width: 2),
                         ),
-                      ),
-                      child: const Text(
-                        "LOGOUT",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        }
+              const SizedBox(height: 20),
+              Text(
+                userEmail,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Member Rex4Red",
+                style: TextStyle(color: Colors.grey),
+              ),
 
-        // --- TAMPILAN LOGIN / REGISTER (DESIGN BARU) ---
-        return Scaffold(
-          backgroundColor: Colors.black,
-          body: SingleChildScrollView(
-            child: Container(
-              height: MediaQuery.of(context).size.height,
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // 1. LOGO / HEADER
-                  const Icon(
-                    Icons.menu_book_rounded,
-                    size: 80,
-                    color: Colors.blueAccent,
+              const SizedBox(height: 30),
+              ListTile(
+                leading: const Icon(Icons.favorite, color: Colors.redAccent),
+                title: const Text("Koleksi Favorit Saya", style: TextStyle(color: Colors.white)),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoriteScreen()));
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.history, color: Colors.blueAccent),
+                title: const Text("Riwayat Baca", style: TextStyle(color: Colors.white)),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.notifications, color: Colors.amber),
+                title: const Text("Atur Notifikasi", style: TextStyle(color: Colors.white)),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationSettingsScreen()));
+                },
+              ),
+
+              // 🔒 TOGGLE BIOMETRIC LOCK
+              if (_isBiometricAvailable)
+                SwitchListTile(
+                  secondary: Icon(
+                    Icons.fingerprint,
+                    color: _isBiometricEnabled ? Colors.greenAccent : Colors.grey,
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "MangaMotion",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
+                  ),
+                  value: _isBiometricEnabled,
+                  activeThumbColor: Colors.greenAccent,
+                  onChanged: (bool value) async {
+                    if (value) {
+                      final authenticated = await _biometricService.authenticate();
+                      if (authenticated) {
+                        await _biometricService.setBiometricEnabled(true);
+                        setState(() => _isBiometricEnabled = true);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("🔒 Kunci biometrik diaktifkan!"), backgroundColor: Colors.green),
+                          );
+                        }
+                      }
+                    } else {
+                      await _biometricService.setBiometricEnabled(false);
+                      setState(() => _isBiometricEnabled = false);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("🔓 Kunci biometrik dinonaktifkan."), backgroundColor: Colors.grey),
+                        );
+                      }
+                    }
+                  },
+                ),
+
+              // 📝 SARAN & KESAN
+              ListTile(
+                leading: const Icon(Icons.rate_review, color: Colors.tealAccent),
+                title: const Text("Saran & Kesan", style: TextStyle(color: Colors.white)),
+                subtitle: Text(
+                  _auth.kesan.isNotEmpty ? "Sudah diisi ✅" : "Belum diisi",
+                  style: TextStyle(color: _auth.kesan.isNotEmpty ? Colors.tealAccent : Colors.grey, fontSize: 12),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                onTap: _showSaranKesanSheet,
+              ),
+
+              const Divider(color: Colors.grey),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: 200,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await _auth.signOut();
+                    if (mounted) setState(() {});
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[900],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  ),
+                  child: const Text(
+                    "LOGOUT",
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // --- TAMPILAN LOGIN / REGISTER ---
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SingleChildScrollView(
+        child: Container(
+          height: MediaQuery.of(context).size.height,
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1. LOGO / HEADER
+              const Icon(Icons.menu_book_rounded, size: 80, color: Colors.blueAccent),
+              const SizedBox(height: 10),
+              const Text(
+                "Rex4Red",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 2),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                _isLoginMode ? "Selamat datang kembali!" : "Bergabunglah dengan kami!",
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 50),
+
+              // 2. INPUT EMAIL
+              _buildTextField(
+                controller: _emailController,
+                label: "Email Address",
+                icon: Icons.email_outlined,
+                errorText: _emailError,
+              ),
+              const SizedBox(height: 20),
+
+              // 3. INPUT PASSWORD
+              _buildTextField(
+                controller: _passwordController,
+                label: "Password",
+                icon: Icons.lock_outline,
+                isPassword: true,
+                errorText: _passwordError,
+              ),
+
+              const SizedBox(height: 40),
+
+              // 4. TOMBOL ACTION
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: Colors.blueAccent))
+                  : Container(
+                      height: 55,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: const LinearGradient(colors: [Colors.blueAccent, Colors.purpleAccent]),
+                        boxShadow: [
+                          BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text(
+                          _isLoginMode ? "MASUK SEKARANG" : "DAFTAR AKUN",
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 5),
+
+              const SizedBox(height: 20),
+
+              // 5. SWITCH LOGIN/REGISTER
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+
                   Text(
-                    _isLoginMode
-                        ? "Selamat datang kembali!"
-                        : "Bergabunglah dengan kami!",
-                    textAlign: TextAlign.center,
+                    _isLoginMode ? "Belum punya akun?" : "Sudah punya akun?",
                     style: const TextStyle(color: Colors.grey),
                   ),
-                  const SizedBox(height: 50),
-
-                  // 2. INPUT EMAIL
-                  _buildTextField(
-                    controller: _emailController,
-                    label: "Email Address",
-                    icon: Icons.email_outlined,
-                    errorText: _emailError,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 3. INPUT PASSWORD
-                  _buildTextField(
-                    controller: _passwordController,
-                    label: "Password",
-                    icon: Icons.lock_outline,
-                    isPassword: true,
-                    errorText: _passwordError,
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // 4. TOMBOL ACTION
-                  _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.blueAccent,
-                          ),
-                        )
-                      : Container(
-                          height: 55,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            gradient: const LinearGradient(
-                              colors: [Colors.blueAccent, Colors.purpleAccent],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blue.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: ElevatedButton(
-                            onPressed: _submit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Text(
-                              _isLoginMode ? "MASUK SEKARANG" : "DAFTAR AKUN",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                  const SizedBox(height: 20),
-
-                  // 5. SWITCH LOGIN/REGISTER
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _isLoginMode
-                            ? "Belum punya akun?"
-                            : "Sudah punya akun?",
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _isLoginMode = !_isLoginMode;
-                            _emailError = null;
-                            _passwordError = null;
-                          });
-                        },
-                        child: Text(
-                          _isLoginMode ? "Daftar" : "Login",
-                          style: const TextStyle(
-                            color: Colors.blueAccent,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _isLoginMode = !_isLoginMode;
+                        _emailError = null;
+                        _passwordError = null;
+                      });
+                    },
+                    child: Text(
+                      _isLoginMode ? "Daftar" : "Login",
+                      style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -530,28 +667,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: InputDecoration(
             labelText: label,
             labelStyle: const TextStyle(color: Colors.grey),
-            prefixIcon: Icon(
-              icon,
-              color: errorText != null ? Colors.redAccent : Colors.grey,
-            ),
-
-            // Warna Background Input
+            prefixIcon: Icon(icon, color: errorText != null ? Colors.redAccent : Colors.grey),
             filled: true,
             fillColor: Colors.grey[900],
-
-            // Border Normal
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[800]!),
             ),
-
-            // Border saat diklik (Fokus)
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Colors.blueAccent),
             ),
-
-            // Border saat ERROR (Merah)
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Colors.redAccent),
@@ -560,21 +686,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Colors.redAccent, width: 2),
             ),
-
-            // Pesan Error Muncul di Sini (Bukan SnackBar)
             errorText: errorText,
-
-            // Tombol Intip Password
             suffixIcon: isPassword
                 ? IconButton(
                     icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
                       color: Colors.grey,
                     ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                   )
                 : null,
           ),

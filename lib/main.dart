@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Rex4Red Manga',
+      title: 'MangaMotion',
       
       // Tema Gelap yang Konsisten
       theme: ThemeData(

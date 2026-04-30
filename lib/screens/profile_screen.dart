@@ -207,7 +207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    "Member Rex4Red",
+                    "Member MangaMotion",
                     style: TextStyle(color: Colors.grey),
                   ),
 
@@ -392,7 +392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    "Rex4Red",
+                    "MangaMotion",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,

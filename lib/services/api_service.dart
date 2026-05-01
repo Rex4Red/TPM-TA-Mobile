@@ -89,9 +89,11 @@ class ApiService {
 
       // List mode (latest / recommended)
       // ⚠️ API tidak memfilter berdasarkan type, jadi kita filter di client
+      // Recommended endpoint hanya punya ~7 item (semua Manhwa), jadi skip filter
+      final bool isRecommended = section == 'recommended';
       final bool isTypeFilter = type != null && type.isNotEmpty && (type == 'project' || type == 'mirror');
       final bool isFormatFilter = type != null && type.isNotEmpty && (type == 'manhwa' || type == 'manhua' || type == 'manga');
-      final bool hasFilter = isTypeFilter || isFormatFilter;
+      final bool hasFilter = !isRecommended && (isTypeFilter || isFormatFilter);
       final Map<String, dynamic> params = {};
       if (page > 1) params['page'] = page;
       // Ambil lebih banyak data agar filter client-side tetap menghasilkan cukup item

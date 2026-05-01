@@ -89,8 +89,11 @@ class ApiService {
 
       // List mode (latest / recommended)
       // ⚠️ API tidak memfilter berdasarkan type, jadi kita filter di client
+      final bool hasTypeFilter = type != null && type.isNotEmpty && (type == 'project' || type == 'mirror');
       final Map<String, dynamic> params = {};
       if (page > 1) params['page'] = page;
+      // Ambil lebih banyak data agar filter client-side tetap menghasilkan cukup item
+      if (hasTypeFilter) params['page_size'] = 50;
 
       final String endpoint = section == 'recommended' 
           ? '$shinigamiUrl/komik/recommended' 

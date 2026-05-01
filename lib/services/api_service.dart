@@ -89,11 +89,13 @@ class ApiService {
 
       // List mode (latest / recommended)
       // ⚠️ API tidak memfilter berdasarkan type, jadi kita filter di client
-      final bool hasTypeFilter = type != null && type.isNotEmpty && (type == 'project' || type == 'mirror');
+      final bool isTypeFilter = type != null && type.isNotEmpty && (type == 'project' || type == 'mirror');
+      final bool isFormatFilter = type != null && type.isNotEmpty && (type == 'manhwa' || type == 'manhua' || type == 'manga');
+      final bool hasFilter = isTypeFilter || isFormatFilter;
       final Map<String, dynamic> params = {};
       if (page > 1) params['page'] = page;
       // Ambil lebih banyak data agar filter client-side tetap menghasilkan cukup item
-      if (hasTypeFilter) params['page_size'] = 50;
+      if (hasFilter) params['page_size'] = 50;
 
       final String endpoint = section == 'recommended' 
           ? '$shinigamiUrl/komik/recommended' 
@@ -104,16 +106,27 @@ class ApiService {
       if (response.statusCode == 200 && response.data['retcode'] == 0) {
         final allData = response.data['data'] as List<dynamic>;
         
-        // 🔥 CLIENT-SIDE FILTER: filter berdasarkan taxonomy.Type
-        if (type != null && type.isNotEmpty && (type == 'project' || type == 'mirror')) {
+        // 🔥 CLIENT-SIDE FILTER
+        if (hasFilter) {
           final filtered = allData.where((json) {
             final taxonomy = json['taxonomy'] as Map<String, dynamic>?;
             if (taxonomy == null) return false;
-            final types = taxonomy['Type'] as List<dynamic>?;
-            if (types == null || types.isEmpty) return false;
-            return types.any((t) => 
-              (t['slug']?.toString().toLowerCase() ?? '') == type.toLowerCase()
-            );
+            
+            if (isTypeFilter) {
+              // Filter berdasarkan taxonomy.Type (Project/Mirror)
+              final types = taxonomy['Type'] as List<dynamic>?;
+              if (types == null || types.isEmpty) return false;
+              return types.any((t) => 
+                (t['slug']?.toString().toLowerCase() ?? '') == type!.toLowerCase()
+              );
+            } else {
+              // Filter berdasarkan taxonomy.Format (Manhwa/Manhua/Manga)
+              final formats = taxonomy['Format'] as List<dynamic>?;
+              if (formats == null || formats.isEmpty) return false;
+              return formats.any((f) => 
+                (f['slug']?.toString().toLowerCase() ?? '') == type!.toLowerCase()
+              );
+            }
           }).toList();
           return _mapSansekaiListToManga(filtered);
         }

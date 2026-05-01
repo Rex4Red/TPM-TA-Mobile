@@ -355,7 +355,7 @@ class _ShinigamiHomeViewState extends State<ShinigamiHomeView> {
                 SmartLoader(
                   key: _recKey, // Penting biar bisa direfresh
                   source: 'shinigami',
-                  section: 'recommended',
+                  section: 'latest',
                   type: _selectedRecType,
                   onSuccess: (data, {onLoadMore, isLoadingMore = false, hasMore = false}) => CarouselSlider(
                     options: CarouselOptions(

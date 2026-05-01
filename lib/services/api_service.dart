@@ -88,8 +88,8 @@ class ApiService {
       }
 
       // List mode (latest / recommended)
+      // ⚠️ API tidak memfilter berdasarkan type, jadi kita filter di client
       final Map<String, dynamic> params = {};
-      if (type != null && type.isNotEmpty) params['type'] = type;
       if (page > 1) params['page'] = page;
 
       final String endpoint = section == 'recommended' 
@@ -99,7 +99,23 @@ class ApiService {
       final response = await _dio.get(endpoint, queryParameters: params);
 
       if (response.statusCode == 200 && response.data['retcode'] == 0) {
-        return _mapSansekaiListToManga(response.data['data']);
+        final allData = response.data['data'] as List<dynamic>;
+        
+        // 🔥 CLIENT-SIDE FILTER: filter berdasarkan taxonomy.Type
+        if (type != null && type.isNotEmpty && (type == 'project' || type == 'mirror')) {
+          final filtered = allData.where((json) {
+            final taxonomy = json['taxonomy'] as Map<String, dynamic>?;
+            if (taxonomy == null) return false;
+            final types = taxonomy['Type'] as List<dynamic>?;
+            if (types == null || types.isEmpty) return false;
+            return types.any((t) => 
+              (t['slug']?.toString().toLowerCase() ?? '') == type.toLowerCase()
+            );
+          }).toList();
+          return _mapSansekaiListToManga(filtered);
+        }
+        
+        return _mapSansekaiListToManga(allData);
       }
     } catch (e) {
       print("❌ [Sansekai Direct] Error: $e");

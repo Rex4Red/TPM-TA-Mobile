@@ -5,6 +5,7 @@ import '../models/manga_model.dart';
 import '../widgets/modern_manga_card.dart';
 import 'search_screen.dart';
 import 'profile_screen.dart';
+import 'chatbot_popup.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,6 +28,17 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 70), // ⬅️ naikkan di sini
+        child: FloatingActionButton(
+          backgroundColor: Colors.blueAccent,
+          onPressed: () {
+            showChatbot(context);
+          },
+          child: const Icon(Icons.smart_toy),
+        ),
+      ),
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
@@ -86,6 +98,14 @@ class _HomeScreenState extends State<HomeScreen>
           children: const [ShinigamiHomeView(), KomikIndoHomeView()],
         ),
       ),
+    );
+  }
+    void showChatbot(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const ChatbotPopup(),
     );
   }
 }

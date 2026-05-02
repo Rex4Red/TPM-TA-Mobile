@@ -88,9 +88,16 @@ class ApiService {
       }
 
       // List mode (latest / recommended)
+      // ⚠️ API tidak memfilter berdasarkan type, jadi kita filter di client
+      // Recommended endpoint hanya punya ~7 item (semua Manhwa), jadi skip filter
+      final bool isRecommended = section == 'recommended';
+      final bool isTypeFilter = type != null && type.isNotEmpty && (type == 'project' || type == 'mirror');
+      final bool isFormatFilter = type != null && type.isNotEmpty && (type == 'manhwa' || type == 'manhua' || type == 'manga');
+      final bool hasFilter = !isRecommended && (isTypeFilter || isFormatFilter);
       final Map<String, dynamic> params = {};
-      if (type != null && type.isNotEmpty) params['type'] = type;
       if (page > 1) params['page'] = page;
+      // Ambil lebih banyak data agar filter client-side tetap menghasilkan cukup item
+      if (hasFilter) params['page_size'] = 50;
 
       final String endpoint = section == 'recommended' 
           ? '$shinigamiUrl/komik/recommended' 
@@ -99,7 +106,34 @@ class ApiService {
       final response = await _dio.get(endpoint, queryParameters: params);
 
       if (response.statusCode == 200 && response.data['retcode'] == 0) {
-        return _mapSansekaiListToManga(response.data['data']);
+        final allData = response.data['data'] as List<dynamic>;
+        
+        // 🔥 CLIENT-SIDE FILTER
+        if (hasFilter) {
+          final filtered = allData.where((json) {
+            final taxonomy = json['taxonomy'] as Map<String, dynamic>?;
+            if (taxonomy == null) return false;
+            
+            if (isTypeFilter) {
+              // Filter berdasarkan taxonomy.Type (Project/Mirror)
+              final types = taxonomy['Type'] as List<dynamic>?;
+              if (types == null || types.isEmpty) return false;
+              return types.any((t) => 
+                (t['slug']?.toString().toLowerCase() ?? '') == type!.toLowerCase()
+              );
+            } else {
+              // Filter berdasarkan taxonomy.Format (Manhwa/Manhua/Manga)
+              final formats = taxonomy['Format'] as List<dynamic>?;
+              if (formats == null || formats.isEmpty) return false;
+              return formats.any((f) => 
+                (f['slug']?.toString().toLowerCase() ?? '') == type!.toLowerCase()
+              );
+            }
+          }).toList();
+          return _mapSansekaiListToManga(filtered);
+        }
+        
+        return _mapSansekaiListToManga(allData);
       }
     } catch (e) {
       print("❌ [Sansekai Direct] Error: $e");

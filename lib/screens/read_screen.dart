@@ -101,17 +101,17 @@ class _ReadScreenState extends State<ReadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: ReadScreenColors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.mangaTitle, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+            Text(widget.mangaTitle, style: const TextStyle(fontSize: 14, color: ReadScreenColors.appBarSubtitle)),
             Text(widget.chapterTitle, style: const TextStyle(fontSize: 16)),
           ],
         ),
-        backgroundColor: Colors.black.withOpacity(0.8),
-        foregroundColor: Colors.white,
+        backgroundColor: ReadScreenColors.appBarBg,
+        foregroundColor: ReadScreenColors.appBarText,
         elevation: 0,
       ),
       body: FutureBuilder<List<String>>(
@@ -121,10 +121,10 @@ class _ReadScreenState extends State<ReadScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.white)));
+            return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: ReadScreenColors.errorText)));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("Tidak ada gambar.", style: TextStyle(color: Colors.white)));
+            return const Center(child: Text("Tidak ada gambar.", style: TextStyle(color: ReadScreenColors.emptyText)));
           }
 
           final images = snapshot.data!;
@@ -142,13 +142,13 @@ class _ReadScreenState extends State<ReadScreen> {
                   fit: BoxFit.fitWidth,
                   placeholder: (context, url) => Container(
                     height: 200,
-                    color: Colors.grey[900],
-                    child: const Center(child: CircularProgressIndicator(color: Colors.grey)),
+                    color: ReadScreenColors.placeholderBg,
+                    child: const Center(child: CircularProgressIndicator(color: ReadScreenColors.placeholderSpinner)),
                   ),
                   errorWidget: (context, url, error) => Container(
                     height: 100,
-                    color: Colors.grey[900],
-                    child: const Icon(Icons.broken_image, color: Colors.red),
+                    color: ReadScreenColors.errorImgBg,
+                    child: const Icon(Icons.broken_image, color: ReadScreenColors.errorImgIcon),
                   ),
                   httpHeaders: const {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -164,10 +164,10 @@ class _ReadScreenState extends State<ReadScreen> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: ReadScreenColors.navBarBg,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.5),
+              color: ReadScreenColors.navBarShadow,
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -183,8 +183,8 @@ class _ReadScreenState extends State<ReadScreen> {
                   icon: const Icon(Icons.arrow_back_ios, size: 18),
                   label: const Text("Prev"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: hasPrevChapter ? Colors.blue : Colors.grey[800],
-                    foregroundColor: hasPrevChapter ? Colors.white : Colors.grey[600],
+                    backgroundColor: hasPrevChapter ? ReadScreenColors.btnActive : ReadScreenColors.btnDisabledBg,
+                    foregroundColor: hasPrevChapter ? ReadScreenColors.btnActiveText : ReadScreenColors.btnDisabledText,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -200,8 +200,8 @@ class _ReadScreenState extends State<ReadScreen> {
                   icon: const Icon(Icons.arrow_forward_ios, size: 18),
                   label: const Text("Next"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: hasNextChapter ? Colors.blue : Colors.grey[800],
-                    foregroundColor: hasNextChapter ? Colors.white : Colors.grey[600],
+                    backgroundColor: hasNextChapter ? ReadScreenColors.btnActive : ReadScreenColors.btnDisabledBg,
+                    foregroundColor: hasNextChapter ? ReadScreenColors.btnActiveText : ReadScreenColors.btnDisabledText,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -215,4 +215,24 @@ class _ReadScreenState extends State<ReadScreen> {
       ),
     );
   }
+}
+
+// ==================== COLOR SETTINGS ====================
+class ReadScreenColors {
+  static const background         = Colors.black;           // Background utama
+  static final appBarBg            = Colors.black.withOpacity(0.8); // Background AppBar
+  static const appBarText          = Colors.white;           // Teks judul chapter
+  static const appBarSubtitle      = Colors.grey;            // Teks nama manga di AppBar
+  static const errorText           = Colors.white;           // Teks error
+  static const emptyText           = Colors.white;           // Teks "Tidak ada gambar"
+  static final placeholderBg       = Colors.grey[900];       // Background placeholder loading
+  static const placeholderSpinner  = Colors.grey;            // Spinner placeholder
+  static final errorImgBg          = Colors.grey[900];       // Background error gambar
+  static const errorImgIcon        = Colors.red;             // Ikon broken_image
+  static final navBarBg            = Colors.grey[900];       // Background navbar bawah
+  static final navBarShadow        = Colors.black.withOpacity(0.5); // Shadow navbar
+  static const btnActive           = Colors.blue;            // Background tombol Prev/Next aktif
+  static const btnActiveText       = Colors.white;           // Teks tombol aktif
+  static final btnDisabledBg       = Colors.grey[800];       // Background tombol disabled
+  static final btnDisabledText     = Colors.grey[600];       // Teks tombol disabled
 }

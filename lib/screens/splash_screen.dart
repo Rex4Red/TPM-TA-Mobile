@@ -118,7 +118,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final slightTilt = sin(_time) * 0.05;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0F1A),
+      backgroundColor: SplashScreenColors.background,
       body: Center(
         child: AnimatedBuilder(
           animation: _controller,
@@ -146,8 +146,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    Colors.blueAccent.withOpacity(0.25 * glowPulse),
-                                    Colors.purpleAccent.withOpacity(0.2 * glowPulse),
+                                    SplashScreenColors.glowInner.withOpacity(0.25 * glowPulse),
+                                    SplashScreenColors.glowOuter.withOpacity(0.2 * glowPulse),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -161,7 +161,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                               decoration: BoxDecoration(
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.blueAccent.withOpacity(0.4 * glowPulse),
+                                    color: SplashScreenColors.shadowGlow.withOpacity(0.4 * glowPulse),
                                     blurRadius: 40,
                                     spreadRadius: 5,
                                   ),
@@ -185,7 +185,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     Text(
                       "MangaMotion",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: SplashScreenColors.titleText,
                         fontSize: 26,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 2 + (sin(_time * 2) * 1),
@@ -198,13 +198,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       Icon(
                         Icons.fingerprint,
                         size: 48,
-                        color: _showRetryButton ? Colors.redAccent : Colors.blueAccent,
+                        color: _showRetryButton ? SplashScreenColors.bioError : SplashScreenColors.bioActive,
                       ),
                       const SizedBox(height: 10),
                       Text(
                         _biometricStatus,
                         style: TextStyle(
-                          color: _showRetryButton ? Colors.redAccent : Colors.white70,
+                          color: _showRetryButton ? SplashScreenColors.bioError : SplashScreenColors.bioStatusText,
                           fontSize: 14,
                         ),
                       ),
@@ -218,8 +218,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         icon: const Icon(Icons.fingerprint, size: 20),
                         label: const Text("Coba Lagi"),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
+                          backgroundColor: SplashScreenColors.retryBtnBg,
+                          foregroundColor: SplashScreenColors.retryBtnText,
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
@@ -236,4 +236,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       ),
     );
   }
+}
+
+// ==================== COLOR SETTINGS ====================
+class SplashScreenColors {
+  static const background       = Color(0xFF0B0F1A);     // Background gelap splash
+  static const glowInner        = Colors.blueAccent;      // Glow radial dalam (biru)
+  static const glowOuter        = Colors.purpleAccent;    // Glow radial luar (ungu)
+  static const shadowGlow       = Colors.blueAccent;      // Shadow dinamis logo
+  static const titleText        = Colors.white;           // Teks "MangaMotion"
+  static const bioActive        = Colors.blueAccent;      // Ikon fingerprint aktif
+  static const bioError         = Colors.redAccent;       // Ikon fingerprint gagal
+  static const bioStatusText    = Colors.white70;         // Teks status biometric
+  static const retryBtnBg       = Colors.blueAccent;      // Background tombol retry
+  static const retryBtnText     = Colors.white;           // Teks tombol retry
 }

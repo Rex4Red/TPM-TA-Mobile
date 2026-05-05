@@ -37,7 +37,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildNavItem(IconData icon, String label, int index) {
     final bool isSelected = _selectedIndex == index;
-    final Color color = isSelected ? Colors.blueAccent : Colors.grey;
+    final Color color = isSelected ? MainScreenColors.navActive : MainScreenColors.navInactive;
 
     return GestureDetector(
       onTap: () => _onItemTapped(index),
@@ -65,11 +65,11 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: Container(
         margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: MainScreenColors.navBarBg,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: MainScreenColors.navBarShadow,
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -94,4 +94,11 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
+}
+
+class MainScreenColors {
+  static const navActive     = Colors.blueAccent;   // Ikon & teks nav aktif
+  static const navInactive   = Colors.grey;         // Ikon & teks nav tidak aktif
+  static final navBarBg      = Colors.grey[900];    // Background navbar bawah
+  static final navBarShadow  = Colors.black.withOpacity(0.3); // Shadow navbar
 }

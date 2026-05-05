@@ -47,11 +47,11 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: FavoriteScreenColors.background,
       appBar: AppBar(
         title: const Text("Koleksi Favorit ❤️", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.black87,
-        foregroundColor: Colors.white,
+        backgroundColor: FavoriteScreenColors.appBarBg,
+        foregroundColor: FavoriteScreenColors.appBarText,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _bookmarks,
@@ -65,11 +65,11 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.favorite_border, size: 80, color: Colors.grey[800]),
+                  Icon(Icons.favorite_border, size: 80, color: FavoriteScreenColors.emptyIcon),
                   const SizedBox(height: 10),
-                  const Text("Belum ada favorit.", style: TextStyle(color: Colors.grey)),
+                  Text("Belum ada favorit.", style: TextStyle(color: FavoriteScreenColors.emptyText)),
                   const SizedBox(height: 5),
-                  const Text("Coba love beberapa komik dulu!", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text("Coba love beberapa komik dulu!", style: TextStyle(color: FavoriteScreenColors.emptyText, fontSize: 12)),
                 ],
               ),
             );
@@ -108,9 +108,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey[900],
+                    color: FavoriteScreenColors.cardBg,
                     borderRadius: BorderRadius.circular(8),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 3)],
+                    boxShadow: [BoxShadow(color: FavoriteScreenColors.cardShadow, blurRadius: 3)],
                   ),
                   child: Column(
                     children: [
@@ -121,8 +121,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                             imageUrl: imageUrl,
                             fit: BoxFit.cover,
                             width: double.infinity,
-                            placeholder: (c, u) => Container(color: Colors.grey[800]),
-                            errorWidget: (c, u, e) => const Icon(Icons.broken_image, color: Colors.grey),
+                            placeholder: (c, u) => Container(color: FavoriteScreenColors.placeholder),
+                            errorWidget: (c, u, e) => Icon(Icons.broken_image, color: FavoriteScreenColors.emptyText),
                           ),
                         ),
                       ),
@@ -135,20 +135,20 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                               item['title'],
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: FavoriteScreenColors.mangaTitle, fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 4),
                             // Badge Tipe Source (Opsional: Biar tau ini dari mana)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: item['source'] == 'shinigami' ? Colors.redAccent.withOpacity(0.2) : Colors.blueAccent.withOpacity(0.2),
+                                color: item['source'] == 'shinigami' ? FavoriteScreenColors.shinigamiBadge.withOpacity(0.2) : FavoriteScreenColors.komikindoBadge.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(4)
                               ),
                               child: Text(
                                 item['source'] == 'shinigami' ? "Shinigami" : "KomikIndo",
                                 style: TextStyle(
-                                  color: item['source'] == 'shinigami' ? Colors.redAccent : Colors.blueAccent,
+                                  color: item['source'] == 'shinigami' ? FavoriteScreenColors.shinigamiBadge : FavoriteScreenColors.komikindoBadge,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold
                                 ),
@@ -167,4 +167,19 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       ),
     );
   }
+}
+
+
+class FavoriteScreenColors {
+  static const background      = Colors.black;        // Background halaman favorit
+  static const appBarBg        = Colors.black87;      // Background AppBar
+  static const appBarText      = Colors.white;        // Teks & ikon AppBar
+  static const mangaTitle      = Colors.white;        // Judul manga di card
+  static final cardBg          = Colors.grey[900];    // Background card manga
+  static final cardShadow      = Colors.black.withOpacity(0.3); // Shadow card
+  static final placeholder     = Colors.grey[800];    // Placeholder loading gambar
+  static final emptyIcon       = Colors.grey[800];    // Ikon hati kosong (empty state)
+  static const emptyText       = Colors.grey;         // Teks "Belum ada favorit"
+  static const shinigamiBadge  = Colors.redAccent;    // Badge & teks Shinigami
+  static const komikindoBadge  = Colors.blueAccent;   // Badge & teks KomikIndo
 }

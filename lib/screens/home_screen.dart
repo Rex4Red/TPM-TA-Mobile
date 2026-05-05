@@ -27,12 +27,12 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: HomeScreenColors.background,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 70), // ⬅️ naikkan di sini
         child: FloatingActionButton(
-          backgroundColor: Colors.blueAccent,
+          backgroundColor: HomeScreenColors.fabBg,
           onPressed: () {
             showChatbot(context);
           },
@@ -48,14 +48,14 @@ class _HomeScreenState extends State<HomeScreen>
                 style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
               ),
               centerTitle: false,
-              backgroundColor: const Color(0xFF121212),
+              backgroundColor: HomeScreenColors.background,
               floating: true,
               pinned: true,
               snap: true,
               elevation: 0,
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.search, color: Colors.white),
+                  icon: Icon(Icons.search, color: HomeScreenColors.searchIcon),
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -64,10 +64,10 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 IconButton(
-                  icon: const CircleAvatar(
+                  icon: CircleAvatar(
                     radius: 14,
-                    backgroundColor: Colors.blueAccent,
-                    child: Icon(Icons.person, size: 18, color: Colors.white),
+                    backgroundColor: HomeScreenColors.avatarBg,
+                    child: Icon(Icons.person, size: 18, color: HomeScreenColors.avatarIcon),
                   ),
                   onPressed: () => Navigator.push(
                     context,
@@ -80,10 +80,10 @@ class _HomeScreenState extends State<HomeScreen>
               ],
               bottom: TabBar(
                 controller: _tabController,
-                indicatorColor: Colors.blueAccent,
+                indicatorColor: HomeScreenColors.tabIndicator,
                 indicatorWeight: 3,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.grey,
+                labelColor: HomeScreenColors.tabActive,
+                unselectedLabelColor: HomeScreenColors.tabInactive,
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold),
                 tabs: const [
                   Tab(text: "Shinigami"),
@@ -270,11 +270,11 @@ class _SmartLoaderState extends State<SmartLoader> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(color: Colors.blueAccent),
+              const CircularProgressIndicator(color: HomeScreenColors.spinner),
               const SizedBox(height: 12),
               Text(
                 _statusMsg,
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
+                style: TextStyle(color: HomeScreenColors.statusText, fontSize: 12),
               ),
             ],
           ),
@@ -290,22 +290,22 @@ class _SmartLoaderState extends State<SmartLoader> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.cloud_off, color: Colors.white24, size: 40),
+              Icon(Icons.cloud_off, color: HomeScreenColors.errorIcon, size: 40),
               const SizedBox(height: 8),
-              const Text(
+                Text(
                 "Server masih tertidur lelap.",
-                style: TextStyle(color: Colors.white54),
+                style: TextStyle(color: HomeScreenColors.statusText),
               ),
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: _startAutoRetry,
-                icon: const Icon(Icons.refresh, color: Colors.white),
-                label: const Text(
+                icon: Icon(Icons.refresh, color: HomeScreenColors.retryIcon),
+                label: Text(
                   "Bangunkan Paksa!",
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: HomeScreenColors.retryText),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
+                  backgroundColor: HomeScreenColors.buttonBg,
                 ),
               ),
             ],
@@ -352,8 +352,8 @@ class _ShinigamiHomeViewState extends State<ShinigamiHomeView> {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      color: Colors.blueAccent,
-      backgroundColor: Colors.grey[900],
+      color: HomeScreenColors.refreshColor,
+      backgroundColor: HomeScreenColors.refreshBg,
       onRefresh: () async => _refresh(),
       child: CustomScrollView(
         slivers: [
@@ -445,7 +445,7 @@ class _ShinigamiHomeViewState extends State<ShinigamiHomeView> {
                   if (isLoadingMore)
                     const Padding(
                       padding: EdgeInsets.all(20),
-                      child: CircularProgressIndicator(color: Colors.blueAccent),
+                      child: CircularProgressIndicator(color: HomeScreenColors.spinner),
                     ),
                   if (!isLoadingMore && hasMore && onLoadMore != null)
                     Padding(
@@ -455,8 +455,8 @@ class _ShinigamiHomeViewState extends State<ShinigamiHomeView> {
                         icon: const Icon(Icons.expand_more),
                         label: const Text('Muat Lebih Banyak'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
+                          backgroundColor: HomeScreenColors.buttonBg,
+                          foregroundColor: HomeScreenColors.buttonText,
                           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                         ),
@@ -488,15 +488,15 @@ class _ShinigamiHomeViewState extends State<ShinigamiHomeView> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: HomeScreenColors.sectionTitle,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list, color: Colors.blueAccent),
-            color: Colors.grey[900],
+            icon: Icon(Icons.filter_list, color: HomeScreenColors.filterIcon),
+            color: HomeScreenColors.popupBg,
             onSelected: (val) => onSelect(val),
             itemBuilder: (context) => filters.entries
                 .map(
@@ -506,8 +506,8 @@ class _ShinigamiHomeViewState extends State<ShinigamiHomeView> {
                       e.key,
                       style: TextStyle(
                         color: selectedVal == e.value
-                            ? Colors.blueAccent
-                            : Colors.white,
+                            ? HomeScreenColors.filterActive
+                            : HomeScreenColors.filterInactive,
                       ),
                     ),
                   ),
@@ -536,8 +536,8 @@ class _KomikIndoHomeViewState extends State<KomikIndoHomeView> {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      color: Colors.blueAccent,
-      backgroundColor: Colors.grey[900],
+      color: HomeScreenColors.refreshColor,
+      backgroundColor: HomeScreenColors.refreshBg,
       onRefresh: () async => setState(() => _key = UniqueKey()),
       child: CustomScrollView(
         slivers: [
@@ -546,12 +546,12 @@ class _KomikIndoHomeViewState extends State<KomikIndoHomeView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 20, 16, 15),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 15),
                   child: Text(
                     "Most Popular ⭐",
                     style: TextStyle(
-                      color: Colors.white,
+                      color: HomeScreenColors.sectionTitle,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -586,13 +586,13 @@ class _KomikIndoHomeViewState extends State<KomikIndoHomeView> {
           ),
 
           // LATEST
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 30, 16, 10),
+              padding: const EdgeInsets.fromLTRB(16, 30, 16, 10),
               child: Text(
                 "Latest Updates ⚡",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: HomeScreenColors.sectionTitle,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -627,7 +627,7 @@ class _KomikIndoHomeViewState extends State<KomikIndoHomeView> {
                   if (isLoadingMore)
                     const Padding(
                       padding: EdgeInsets.all(20),
-                      child: CircularProgressIndicator(color: Colors.blueAccent),
+                      child: CircularProgressIndicator(color: HomeScreenColors.spinner),
                     ),
                   if (!isLoadingMore && hasMore && onLoadMore != null)
                     Padding(
@@ -637,8 +637,8 @@ class _KomikIndoHomeViewState extends State<KomikIndoHomeView> {
                         icon: const Icon(Icons.expand_more),
                         label: const Text('Muat Lebih Banyak'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
+                          backgroundColor: HomeScreenColors.buttonBg,
+                          foregroundColor: HomeScreenColors.buttonText,
                           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                         ),
@@ -653,4 +653,29 @@ class _KomikIndoHomeViewState extends State<KomikIndoHomeView> {
       ),
     );
   }
+}
+
+class HomeScreenColors {
+  static const background      = Color(0xFF121212);    // Background utama & AppBar
+  static const fabBg           = Colors.blueAccent;    // Background FAB chatbot
+  static const searchIcon      = Colors.white;         // Ikon search di AppBar
+  static const avatarBg        = Colors.blueAccent;    // Background avatar profile
+  static const avatarIcon      = Colors.white;         // Ikon person di avatar
+  static const tabIndicator    = Colors.blueAccent;    // Garis indikator tab aktif
+  static const tabActive       = Colors.white;         // Teks tab aktif
+  static const tabInactive     = Colors.grey;          // Teks tab tidak aktif
+  static const spinner         = Colors.blueAccent;    // Loading spinner
+  static const statusText      = Colors.white54;       // Teks status loading/error
+  static const errorIcon       = Colors.white24;       // Ikon cloud_off saat error
+  static const retryIcon       = Colors.white;         // Ikon refresh di tombol retry
+  static const retryText       = Colors.white;         // Teks "Bangunkan Paksa!"
+  static const buttonBg        = Colors.blueAccent;    // Background tombol (retry & load more)
+  static const buttonText      = Colors.white;         // Teks tombol "Muat Lebih Banyak"
+  static const refreshColor    = Colors.blueAccent;    // Warna RefreshIndicator
+  static final refreshBg       = Colors.grey[900];     // Background RefreshIndicator
+  static const sectionTitle    = Colors.white;         // Judul section (Featured, Latest, Popular)
+  static const filterIcon      = Colors.blueAccent;    // Ikon filter
+  static final popupBg         = Colors.grey[900];     // Background popup menu filter
+  static const filterActive    = Colors.blueAccent;    // Teks filter terpilih
+  static const filterInactive  = Colors.white;         // Teks filter tidak terpilih
 }

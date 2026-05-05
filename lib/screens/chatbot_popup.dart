@@ -61,23 +61,23 @@ class _ChatbotPopupState extends State<ChatbotPopup> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isUser
-              ? Colors.blueAccent
-              : Colors.grey.shade300,
+              ? ChatbotPopupColors.bubbleUser
+              : ChatbotPopupColors.bubbleAI,
           borderRadius: BorderRadius.circular(12),
         ),
         child: MarkdownBody(
           data: msg["text"],
           styleSheet: MarkdownStyleSheet(
             p: TextStyle(
-              color: isUser ? Colors.white : Colors.black,
+              color: isUser ? ChatbotPopupColors.textOnUser : ChatbotPopupColors.textOnAI,
               fontSize: 14,
             ),
             strong: TextStyle(
               fontWeight: FontWeight.bold,
-              color: isUser ? Colors.white : Colors.black,
+              color: isUser ? ChatbotPopupColors.textOnUser : ChatbotPopupColors.textOnAI,
             ),
             listBullet: TextStyle(
-              color: isUser ? Colors.white : Colors.black,
+              color: isUser ? ChatbotPopupColors.textOnUser : ChatbotPopupColors.textOnAI,
             ),
           ),
         ),
@@ -94,8 +94,8 @@ class _ChatbotPopupState extends State<ChatbotPopup> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom + 12,
         ),
-        decoration: const BoxDecoration(
-          color: Color(0xFF1E1E1E),
+        decoration: BoxDecoration(
+          color: ChatbotPopupColors.background,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -106,17 +106,17 @@ class _ChatbotPopupState extends State<ChatbotPopup> {
               height: 5,
               width: 50,
               decoration: BoxDecoration(
-                color: Colors.grey,
+                color: ChatbotPopupColors.handle,
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
 
             const SizedBox(height: 10),
 
-            const Text(
+            Text(
               "AI Chatbot",
               style: TextStyle(
-                color: Colors.white,
+                color: ChatbotPopupColors.title,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -135,11 +135,11 @@ class _ChatbotPopupState extends State<ChatbotPopup> {
             ),
 
             if (isLoading)
-              const Padding(
-                padding: EdgeInsets.all(8),
+              Padding(
+                padding: const EdgeInsets.all(8),
                 child: Text(
                   "AI lagi mikir...",
-                  style: TextStyle(color: Colors.white54),
+                  style: TextStyle(color: ChatbotPopupColors.loadingText),
                 ),
               ),
 
@@ -152,13 +152,13 @@ class _ChatbotPopupState extends State<ChatbotPopup> {
                     Expanded(
                       child: TextField(
                         controller: _controller,
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: ChatbotPopupColors.inputText),
                         decoration: InputDecoration(
                           hintText: "Ketik pesan...",
                           hintStyle:
-                              const TextStyle(color: Colors.white54),
+                              TextStyle(color: ChatbotPopupColors.hintText),
                           filled: true,
-                          fillColor: Colors.grey[900],
+                          fillColor: ChatbotPopupColors.inputBg,
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 10),
                           border: OutlineInputBorder(
@@ -170,8 +170,8 @@ class _ChatbotPopupState extends State<ChatbotPopup> {
                     ),
                     IconButton(
                       onPressed: sendMessage,
-                      icon: const Icon(Icons.send,
-                          color: Colors.blueAccent),
+                      icon: Icon(Icons.send,
+                          color: ChatbotPopupColors.sendButton),
                     ),
                   ],
                 ),
@@ -183,3 +183,22 @@ class _ChatbotPopupState extends State<ChatbotPopup> {
     );
   }
 }
+
+// ========== COLOR SETTINGS - chatbot_popup.dart ==========
+// Ganti warna di bawah, lalu Hot Reload (r). Langsung berubah!
+// =========================================================
+class ChatbotPopupColors {
+  static const background  = Color(0xFF1E1E1E);     // Background popup chatbot
+  static const handle      = Color.fromARGB(255, 54, 53, 53);            // Garis handle atas popup
+  static const title       = Colors.white;           // Judul "AI Chatbot"
+  static const bubbleUser  = Colors.blueAccent;      // Bubble chat user (kanan)
+  static final  bubbleAI    = Colors.grey.shade300;    // Bubble chat AI (kiri)
+  static const textOnUser  = Colors.white;           // Teks di bubble user
+  static const textOnAI    = Colors.black;           // Teks di bubble AI
+  static const loadingText = Colors.white54;         // Teks "AI lagi mikir..."
+  static const inputText   = Colors.white;           // Teks ketikan user
+  static const hintText    = Colors.white54;         // Placeholder "Ketik pesan..."
+  static final inputBg     = Colors.grey[900];       // Background input field
+  static const sendButton  = Colors.blueAccent;      // Ikon tombol kirim
+}
+// =========================================================

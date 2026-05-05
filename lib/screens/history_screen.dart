@@ -23,11 +23,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: HistoryScreenColors.background,
       appBar: AppBar(
         title: const Text("Riwayat Baca"),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: HistoryScreenColors.background,
+        foregroundColor: HistoryScreenColors.appBarText,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _historyFuture,
@@ -36,8 +36,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Text("Belum ada riwayat baca.", style: TextStyle(color: Colors.grey)),
+            return Center(
+              child: Text("Belum ada riwayat baca.", style: TextStyle(color: HistoryScreenColors.emptyText)),
             );
           }
 
@@ -56,12 +56,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     width: 50,
                     height: 70,
                     fit: BoxFit.cover,
-                    errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.grey),
+                    errorWidget: (context, url, error) => Icon(Icons.broken_image, color: HistoryScreenColors.emptyText),
                   ),
                 ),
                 title: Text(
                   item['manga_title'] ?? 'Tanpa Judul',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: HistoryScreenColors.mangaTitle, fontWeight: FontWeight.bold),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -71,11 +71,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     const SizedBox(height: 4),
                     Text(
                       "Terakhir: ${item['chapter_title']}",
-                      style: const TextStyle(color: Colors.blueAccent),
+                      style: TextStyle(color: HistoryScreenColors.chapterText),
                     ),
                     Text(
                       "Source: ${item['source']}",
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      style: TextStyle(color: HistoryScreenColors.sourceText, fontSize: 12),
                     ),
                   ],
                 ),
@@ -101,4 +101,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
     );
   }
+}
+
+class HistoryScreenColors {
+  static const background   = Colors.black;       // Background & AppBar
+  static const appBarText   = Colors.white;        // Teks AppBar
+  static const emptyText    = Colors.grey;         // Teks empty & ikon broken
+  static const mangaTitle   = Colors.white;        // Judul manga
+  static const chapterText  = Colors.blueAccent;   // Teks chapter terakhir
+  static final sourceText   = Colors.grey[600];    // Teks "Source: ..."
 }

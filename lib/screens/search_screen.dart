@@ -100,30 +100,30 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: SearchScreenColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
-        title: const Text("Cari Komik", style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: SearchScreenColors.appBarBg,
+        title: const Text("Cari Komik", style: TextStyle(color: SearchScreenColors.appBarTitle)),
+        iconTheme: const IconThemeData(color: SearchScreenColors.appBarIcon),
       ),
       body: Column(
         children: [
           // --- KOLOM INPUT PENCARIAN ---
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.grey[900],
+            color: SearchScreenColors.searchBarBg,
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _searchController,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: SearchScreenColors.inputText),
                     decoration: InputDecoration(
                       hintText: "Naruto, One Piece...",
-                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      hintStyle: TextStyle(color: SearchScreenColors.inputHint),
                       filled: true,
-                      fillColor: Colors.black,
-                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      fillColor: SearchScreenColors.inputFill,
+                      prefixIcon: const Icon(Icons.search, color: SearchScreenColors.inputIcon),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -139,7 +139,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _doSearch,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent, // Merah biar semangat
+                    backgroundColor: SearchScreenColors.searchBtnBg,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 16,
@@ -153,11 +153,11 @@ class _SearchScreenState extends State<SearchScreen> {
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: SearchScreenColors.searchBtnSpinner,
                             strokeWidth: 2,
                           ),
                         )
-                      : const Icon(Icons.search, color: Colors.white),
+                      : const Icon(Icons.search, color: SearchScreenColors.searchBtnIcon),
                 ),
               ],
             ),
@@ -173,7 +173,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       _hasSearched
                           ? "Tidak ditemukan"
                           : "Cari di Shinigami & KomikIndo sekaligus!",
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: SearchScreenColors.emptyText),
                     ),
                   )
                 : GridView.builder(
@@ -221,11 +221,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                         httpHeaders: _getHeaders(manga.type),
                                         fit: BoxFit.cover,
                                         placeholder: (context, url) =>
-                                            Container(color: Colors.grey[800]),
+                                            Container(color: SearchScreenColors.placeholderBg),
                                         errorWidget: (context, url, error) =>
                                             const Icon(
                                               Icons.broken_image,
-                                              color: Colors.grey,
+                                              color: SearchScreenColors.brokenImgIcon,
                                             ),
                                       ),
                                     ),
@@ -242,15 +242,15 @@ class _SearchScreenState extends State<SearchScreen> {
                                       decoration: BoxDecoration(
                                         color:
                                             (isShinigami
-                                                    ? Colors.redAccent
-                                                    : Colors.blueAccent)
+                                                    ? SearchScreenColors.badgeShinigami
+                                                    : SearchScreenColors.badgeKomikIndo)
                                                 .withOpacity(0.9),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
                                         isShinigami ? 'Shinigami' : 'KomikIndo',
                                         style: const TextStyle(
-                                          color: Colors.white,
+                                          color: SearchScreenColors.badgeText,
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -272,7 +272,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                           begin: Alignment.bottomCenter,
                                           end: Alignment.topCenter,
                                           colors: [
-                                            Colors.black.withOpacity(0.8),
+                                            SearchScreenColors.gradientDark,
                                             Colors.transparent,
                                           ],
                                         ),
@@ -284,7 +284,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                       child: Text(
                                         manga.chapter,
                                         style: const TextStyle(
-                                          color: Colors.amber,
+                                          color: SearchScreenColors.chapterText,
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -301,7 +301,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: SearchScreenColors.mangaTitle,
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -316,4 +316,39 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
     );
   }
+}
+
+// ==================== COLOR SETTINGS ====================
+class SearchScreenColors {
+  static const background        = Colors.black;           // Background utama
+  static final appBarBg          = Colors.grey[900];       // Background AppBar
+  static const appBarTitle       = Colors.white;           // Judul "Cari Komik"
+  static const appBarIcon        = Colors.white;           // Ikon back AppBar
+
+  // --- SEARCH BAR ---
+  static final searchBarBg      = Colors.grey[900];       // Background area pencarian
+  static const inputText         = Colors.white;           // Teks input
+  static final inputHint         = Colors.grey[600];       // Hint placeholder
+  static const inputFill         = Colors.black;           // Fill background input
+  static const inputIcon         = Colors.grey;            // Ikon search di input
+
+  // --- TOMBOL CARI ---
+  static const searchBtnBg       = Colors.redAccent;       // Background tombol cari
+  static const searchBtnSpinner  = Colors.white;           // Spinner loading tombol
+  static const searchBtnIcon     = Colors.white;           // Ikon search tombol
+
+  // --- KONTEN ---
+  static final emptyText         = Colors.grey[600];       // Teks "Tidak ditemukan"
+  static final placeholderBg     = Colors.grey[800];       // Background placeholder gambar
+  static const brokenImgIcon     = Colors.grey;            // Ikon broken image
+
+  // --- BADGE SOURCE ---
+  static const badgeShinigami   = Colors.redAccent;       // Badge Shinigami
+  static const badgeKomikIndo   = Colors.blueAccent;      // Badge KomikIndo
+  static const badgeText         = Colors.white;           // Teks badge
+
+  // --- OVERLAY & TEKS ---
+  static final gradientDark      = Colors.black.withOpacity(0.8); // Gradient bawah card
+  static const chapterText       = Colors.amber;           // Teks chapter
+  static const mangaTitle        = Colors.white;           // Judul manga di bawah card
 }

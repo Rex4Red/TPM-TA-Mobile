@@ -21,15 +21,15 @@ class _ToolsScreenState extends State<ToolsScreen> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: ToolsScreenColors.background,
         appBar: AppBar(
           title: const Text("Tools Manga 🛠️", style: TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
+          backgroundColor: ToolsScreenColors.background,
+          foregroundColor: ToolsScreenColors.appBarText,
           bottom: const TabBar(
-            indicatorColor: Colors.blueAccent,
-            labelColor: Colors.blueAccent,
-            unselectedLabelColor: Colors.grey,
+            indicatorColor: ToolsScreenColors.tabActive,
+            labelColor: ToolsScreenColors.tabActive,
+            unselectedLabelColor: ToolsScreenColors.tabInactive,
             isScrollable: false,
             tabs: [
               Tab(icon: Icon(Icons.currency_exchange), text: "Kurs"),
@@ -188,13 +188,13 @@ class _ShakeGachaViewState extends State<ShakeGachaView> {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.grey[900],
+          backgroundColor: ToolsScreenColors.dialogBg,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("🎉 GACHA GET! 🎉", textAlign: TextAlign.center, style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+          title: const Text("🎉 GACHA GET! 🎉", textAlign: TextAlign.center, style: TextStyle(color: ToolsScreenColors.gachaTitle, fontWeight: FontWeight.bold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("Manga takdirmu hari ini adalah:", style: TextStyle(color: Colors.white70)),
+              const Text("Manga takdirmu hari ini adalah:", style: TextStyle(color: ToolsScreenColors.dialogContent)),
               const SizedBox(height: 15),
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
@@ -202,11 +202,11 @@ class _ShakeGachaViewState extends State<ShakeGachaView> {
                   cover, 
                   height: 200, 
                   fit: BoxFit.cover,
-                  errorBuilder: (c,e,s) => Container(height: 200, color: Colors.grey, child: const Icon(Icons.broken_image)),
+                  errorBuilder: (c,e,s) => Container(height: 200, color: ToolsScreenColors.gachaErrorBg, child: const Icon(Icons.broken_image)),
                 ),
               ),
               const SizedBox(height: 10),
-              Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              Text(title, style: const TextStyle(color: ToolsScreenColors.gachaMangaTitle, fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
             ],
           ),
           actions: [
@@ -234,8 +234,8 @@ class _ShakeGachaViewState extends State<ShakeGachaView> {
                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Data manga tidak valid")));
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-              child: const Text("Baca Sekarang", style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(backgroundColor: ToolsScreenColors.gachaBtnBg),
+              child: const Text("Baca Sekarang", style: TextStyle(color: ToolsScreenColors.gachaBtnText)),
             ),
           ],
         );
@@ -249,11 +249,11 @@ class _ShakeGachaViewState extends State<ShakeGachaView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.vibration, size: 80, color: Colors.blueAccent.withOpacity(0.7)),
+          Icon(Icons.vibration, size: 80, color: ToolsScreenColors.shakeIcon),
           const SizedBox(height: 20),
           const Text(
             "Shake Your Phone!", 
-            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
+            style: TextStyle(color: ToolsScreenColors.shakeTitle, fontSize: 24, fontWeight: FontWeight.bold)
           ),
           const SizedBox(height: 10),
           Padding(
@@ -263,7 +263,7 @@ class _ShakeGachaViewState extends State<ShakeGachaView> {
                   ? "Siap! Goyangkan HP-mu untuk mendapatkan rekomendasi manga!" 
                   : "Mengambil data dari Rex4Red API...",
               textAlign: TextAlign.center,
-              style: TextStyle(color: _isPoolReady ? Colors.grey : Colors.amber),
+              style: TextStyle(color: _isPoolReady ? ToolsScreenColors.shakeReady : ToolsScreenColors.shakeLoading),
             ),
           ),
         ],
@@ -375,16 +375,16 @@ class _CurrencyConverterViewState extends State<CurrencyConverterView> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Row(children: [
-                Icon(Icons.update, size: 14, color: Colors.grey[600]),
+                Icon(Icons.update, size: 14, color: ToolsScreenColors.kursStatusIcon),
                 const SizedBox(width: 5),
-                Text("Kurs: $_lastUpdated", style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                Text("Kurs: $_lastUpdated", style: TextStyle(color: ToolsScreenColors.kursStatusText, fontSize: 11)),
                 const Spacer(),
                 GestureDetector(
                   onTap: _fetchLiveRates,
                   child: Row(children: [
-                    Icon(Icons.refresh, size: 14, color: Colors.blueAccent.withOpacity(0.7)),
+                    Icon(Icons.refresh, size: 14, color: ToolsScreenColors.kursRefresh),
                     const SizedBox(width: 3),
-                    Text("Refresh", style: TextStyle(color: Colors.blueAccent.withOpacity(0.7), fontSize: 11)),
+                    Text("Refresh", style: TextStyle(color: ToolsScreenColors.kursRefresh, fontSize: 11)),
                   ]),
                 ),
               ]),
@@ -396,31 +396,31 @@ class _CurrencyConverterViewState extends State<CurrencyConverterView> {
             const Center(child: Padding(
               padding: EdgeInsets.all(30),
               child: Column(children: [
-                CircularProgressIndicator(color: Colors.blueAccent),
+                CircularProgressIndicator(color: ToolsScreenColors.tabActive),
                 SizedBox(height: 10),
-                Text("Mengambil kurs terbaru...", style: TextStyle(color: Colors.grey)),
+                Text("Mengambil kurs terbaru...", style: TextStyle(color: ToolsScreenColors.kursLoadingText)),
               ]),
             ))
           else ...[
             TextField(
               controller: _controller, 
               keyboardType: TextInputType.number, 
-              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold), 
+              style: const TextStyle(color: ToolsScreenColors.kursInputText, fontSize: 24, fontWeight: FontWeight.bold), 
               decoration: InputDecoration(
                 labelText: "Masukkan Harga", 
-                labelStyle: TextStyle(color: Colors.grey[400]), 
-                prefixIcon: const Icon(Icons.attach_money, color: Colors.blueAccent), 
-                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey[800]!), borderRadius: BorderRadius.circular(12)), 
-                focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.blueAccent)), 
+                labelStyle: TextStyle(color: ToolsScreenColors.kursLabel), 
+                prefixIcon: const Icon(Icons.attach_money, color: ToolsScreenColors.kursPrefixIcon), 
+                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ToolsScreenColors.kursBorder), borderRadius: BorderRadius.circular(12)), 
+                focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: ToolsScreenColors.kursFocusBorder)), 
                 filled: true, 
-                fillColor: Colors.grey[900],
+                fillColor: ToolsScreenColors.kursFill,
               ), 
               onChanged: (val) => _convert(),
             ),
             const SizedBox(height: 20),
             Row(children: [
               Expanded(child: _buildDropdown("Dari", _fromCurrency, (val) { setState(() => _fromCurrency = val!); _convert(); })), 
-              const Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Icon(Icons.arrow_forward, color: Colors.grey)), 
+              const Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Icon(Icons.arrow_forward, color: ToolsScreenColors.kursArrow)), 
               Expanded(child: _buildDropdown("Ke", _toCurrency, (val) { setState(() => _toCurrency = val!); _convert(); })),
             ]),
             const SizedBox(height: 30),
@@ -428,14 +428,14 @@ class _CurrencyConverterViewState extends State<CurrencyConverterView> {
               width: double.infinity, 
               padding: const EdgeInsets.all(20), 
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.blue[900]!, Colors.blue[800]!]), 
+                gradient: LinearGradient(colors: [ToolsScreenColors.kursResultGradStart, ToolsScreenColors.kursResultGradEnd]), 
                 borderRadius: BorderRadius.circular(20),
               ), 
               child: Column(children: [
-                const Text("Estimasi Harga:", style: TextStyle(color: Colors.white70)), 
+                const Text("Estimasi Harga:", style: TextStyle(color: ToolsScreenColors.kursResultLabel)), 
                 Text(
                   NumberFormat.currency(locale: 'id', symbol: _toCurrency == 'IDR' ? 'Rp ' : '$_toCurrency ', decimalDigits: 2).format(_result), 
-                  style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: ToolsScreenColors.kursResultValue, fontSize: 32, fontWeight: FontWeight.bold),
                 ),
               ]),
             ),
@@ -446,17 +446,17 @@ class _CurrencyConverterViewState extends State<CurrencyConverterView> {
 
   Widget _buildDropdown(String label, String value, Function(String?) onChanged) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(color: Colors.grey)), 
+      Text(label, style: const TextStyle(color: ToolsScreenColors.kursDropdownLabel)), 
       const SizedBox(height: 5), 
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 12), 
-        decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey[800]!)), 
+        decoration: BoxDecoration(color: ToolsScreenColors.kursFill, borderRadius: BorderRadius.circular(10), border: Border.all(color: ToolsScreenColors.kursBorder)), 
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             value: value, 
-            dropdownColor: Colors.grey[900], 
+            dropdownColor: ToolsScreenColors.kursFill, 
             isExpanded: true, 
-            style: const TextStyle(color: Colors.white, fontSize: 16), 
+            style: const TextStyle(color: ToolsScreenColors.kursDropdownText, fontSize: 16), 
             items: _supportedCurrencies.map((String key) => DropdownMenuItem<String>(value: key, child: Text(key))).toList(), 
             onChanged: onChanged,
           ),
@@ -464,7 +464,7 @@ class _CurrencyConverterViewState extends State<CurrencyConverterView> {
       ),
     ]);
   }
-  Widget _buildHeader(String title, String subtitle) { return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 5), Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13))]); }
+  Widget _buildHeader(String title, String subtitle) { return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: ToolsScreenColors.headerTitle, fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 5), Text(subtitle, style: TextStyle(color: ToolsScreenColors.headerSubtitle, fontSize: 13))]); }
 }
 
 class WorldClockView extends StatefulWidget {
@@ -494,18 +494,76 @@ class _WorldClockViewState extends State<WorldClockView> {
     return ListView(padding: const EdgeInsets.all(20), children: [
       _buildHeader("Jadwal Rilis Global 🌍", "Pantau waktu server."),
       const SizedBox(height: 20),
-      _buildClockCard("WIB", "Lokal", _now.add(const Duration(hours: 7)), Colors.blue),
-      _buildClockCard("WITA", "Lokal", _now.add(const Duration(hours: 8)), Colors.cyan),
-      _buildClockCard("WIT", "Lokal", _now.add(const Duration(hours: 9)), Colors.teal),
-      const Divider(color: Colors.grey, height: 30),
-      _buildClockCard("Tokyo (JST)", "Manga 🇯🇵", _now.add(const Duration(hours: 9)), Colors.redAccent),
-      _buildClockCard("Seoul (KST)", "Manhwa 🇰🇷", _now.add(const Duration(hours: 9)), Colors.pinkAccent),
-      _buildClockCard("London (GMT)", "Global 🇬🇧", _now.add(const Duration(hours: 0)), Colors.purpleAccent),
+      _buildClockCard("WIB", "Lokal", _now.add(const Duration(hours: 7)), ToolsScreenColors.clockWib),
+      _buildClockCard("WITA", "Lokal", _now.add(const Duration(hours: 8)), ToolsScreenColors.clockWita),
+      _buildClockCard("WIT", "Lokal", _now.add(const Duration(hours: 9)), ToolsScreenColors.clockWit),
+      const Divider(color: ToolsScreenColors.clockDivider, height: 30),
+      _buildClockCard("Tokyo (JST)", "Manga 🇯🇵", _now.add(const Duration(hours: 9)), ToolsScreenColors.clockTokyo),
+      _buildClockCard("Seoul (KST)", "Manhwa 🇰🇷", _now.add(const Duration(hours: 9)), ToolsScreenColors.clockSeoul),
+      _buildClockCard("London (GMT)", "Global 🇬🇧", _now.add(const Duration(hours: 0)), ToolsScreenColors.clockLondon),
     ]);
   }
 
   Widget _buildClockCard(String city, String tag, DateTime time, Color color) {
-    return Container(margin: const EdgeInsets.only(bottom: 15), padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(15), border: Border.all(color: color.withOpacity(0.3))), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(city, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)), Text(tag, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)), Text(DateFormat('EEEE, d MMM yyyy', 'id_ID').format(time), style: TextStyle(color: Colors.grey[500], fontSize: 12))]), Text(DateFormat('HH:mm:ss').format(time), style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'monospace'))]));
+    return Container(margin: const EdgeInsets.only(bottom: 15), padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: ToolsScreenColors.clockCardBg, borderRadius: BorderRadius.circular(15), border: Border.all(color: color.withOpacity(0.3))), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(city, style: const TextStyle(color: ToolsScreenColors.clockCity, fontWeight: FontWeight.bold, fontSize: 16)), Text(tag, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)), Text(DateFormat('EEEE, d MMM yyyy', 'id_ID').format(time), style: TextStyle(color: ToolsScreenColors.clockDate, fontSize: 12))]), Text(DateFormat('HH:mm:ss').format(time), style: TextStyle(color: ToolsScreenColors.clockTime, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'monospace'))]));
   }
-  Widget _buildHeader(String title, String subtitle) { return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 5), Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13))]); }
+  Widget _buildHeader(String title, String subtitle) { return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: ToolsScreenColors.headerTitle, fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 5), Text(subtitle, style: TextStyle(color: ToolsScreenColors.headerSubtitle, fontSize: 13))]); }
+}
+
+// ==================== COLOR SETTINGS ====================
+class ToolsScreenColors {
+  // --- UMUM ---
+  static const background         = Colors.black;             // Background utama
+  static const appBarText          = Colors.white;             // Teks AppBar
+  static const headerTitle         = Colors.white;             // Judul header section
+  static final headerSubtitle      = Colors.grey[500];         // Sub-judul header
+
+  // --- TAB BAR ---
+  static const tabActive           = Colors.blueAccent;        // Tab aktif & indikator
+  static const tabInactive         = Colors.grey;              // Tab tidak aktif
+
+  // --- GACHA ---
+  static final dialogBg            = Colors.grey[900];         // Background dialog gacha
+  static const dialogContent       = Colors.white70;           // Teks konten dialog
+  static const gachaTitle          = Colors.amber;             // Judul "GACHA GET!"
+  static const gachaMangaTitle     = Colors.white;             // Judul manga di dialog
+  static const gachaErrorBg        = Colors.grey;              // Background error gambar
+  static const gachaBtnBg          = Colors.blueAccent;        // Tombol "Baca Sekarang"
+  static const gachaBtnText        = Colors.white;             // Teks tombol gacha
+  static final shakeIcon           = Colors.blueAccent.withOpacity(0.7); // Ikon vibration
+  static const shakeTitle          = Colors.white;             // Teks "Shake Your Phone!"
+  static const shakeReady          = Colors.grey;              // Teks siap shake
+  static const shakeLoading        = Colors.amber;             // Teks loading data
+
+  // --- KURS CONVERTER ---
+  static final kursStatusIcon      = Colors.grey[600];         // Ikon update kurs
+  static final kursStatusText      = Colors.grey[600];         // Teks status kurs
+  static final kursRefresh         = Colors.blueAccent.withOpacity(0.7); // Ikon & teks refresh
+  static const kursLoadingText     = Colors.grey;              // Teks loading kurs
+  static const kursInputText       = Colors.white;             // Teks input harga
+  static final kursLabel           = Colors.grey[400];         // Label field
+  static const kursPrefixIcon      = Colors.blueAccent;        // Ikon prefix ($)
+  static final kursBorder          = Colors.grey[800]!;        // Border field normal
+  static const kursFocusBorder     = Colors.blueAccent;        // Border field fokus
+  static final kursFill            = Colors.grey[900];         // Fill background field
+  static const kursArrow           = Colors.grey;              // Ikon arrow antar dropdown
+  static const kursDropdownLabel   = Colors.grey;              // Label dropdown
+  static const kursDropdownText    = Colors.white;             // Teks dropdown
+  static final kursResultGradStart = Colors.blue[900]!;        // Gradient hasil (kiri)
+  static final kursResultGradEnd   = Colors.blue[800]!;        // Gradient hasil (kanan)
+  static const kursResultLabel     = Colors.white70;           // Label "Estimasi Harga"
+  static const kursResultValue     = Colors.white;             // Nilai hasil konversi
+
+  // --- WORLD CLOCK ---
+  static const clockWib            = Colors.blue;              // Warna WIB
+  static const clockWita           = Colors.cyan;              // Warna WITA
+  static const clockWit            = Colors.teal;              // Warna WIT
+  static const clockTokyo          = Colors.redAccent;         // Warna Tokyo
+  static const clockSeoul          = Colors.pinkAccent;        // Warna Seoul
+  static const clockLondon         = Colors.purpleAccent;      // Warna London
+  static const clockDivider        = Colors.grey;              // Divider antar zona
+  static final clockCardBg         = Colors.grey[900];         // Background card jam
+  static const clockCity           = Colors.white;             // Nama kota
+  static final clockDate           = Colors.grey[500];         // Tanggal
+  static const clockTime           = Colors.white;             // Waktu digital
 }

@@ -109,7 +109,7 @@ class _DetailScreenState extends State<DetailScreen> {
           SnackBar(
             content: Text(newStatus ? "Ditambahkan ke Favorit ❤️" : "Dihapus dari Favorit 💔"),
             duration: const Duration(seconds: 1),
-            backgroundColor: Colors.grey[900],
+            backgroundColor: DetailScreenColors.cardSurface,
           ),
         );
       }
@@ -138,13 +138,13 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: DetailScreenColors.background,
       floatingActionButton: FloatingActionButton(
         onPressed: _onBookmarkPressed,
-        backgroundColor: Colors.grey[900],
+        backgroundColor: DetailScreenColors.cardSurface,
         child: Icon(
           _isBookmarked ? Icons.favorite : Icons.favorite_border,
-          color: _isBookmarked ? Colors.redAccent : Colors.white,
+          color: _isBookmarked ? DetailScreenColors.favorite : DetailScreenColors.textPrimary,
         ),
       ),
       body: FutureBuilder<MangaDetail>(
@@ -154,10 +154,10 @@ class _DetailScreenState extends State<DetailScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.white)));
+            return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: DetailScreenColors.textPrimary)));
           }
           if (!snapshot.hasData) {
-            return const Center(child: Text("Data tidak ditemukan", style: TextStyle(color: Colors.white)));
+            return Center(child: Text("Data tidak ditemukan", style: TextStyle(color: DetailScreenColors.textPrimary)));
           }
 
           final data = snapshot.data!;
@@ -169,11 +169,11 @@ class _DetailScreenState extends State<DetailScreen> {
                 expandedHeight: 300.0,
                 floating: false,
                 pinned: true,
-                backgroundColor: Colors.grey[900],
+                backgroundColor: DetailScreenColors.cardSurface,
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
                     data.title.length > 20 ? "${data.title.substring(0, 20)}..." : data.title,
-                    style: const TextStyle(fontSize: 14, shadows: [Shadow(blurRadius: 10, color: Colors.black)]),
+                    style: TextStyle(fontSize: 14, shadows: [Shadow(blurRadius: 10, color: DetailScreenColors.background)]),
                   ),
                   background: Stack(
                     fit: StackFit.expand,
@@ -183,7 +183,7 @@ class _DetailScreenState extends State<DetailScreen> {
                         imageUrl: widget.cover, // Pakai widget.cover biar aman kalau API detail belum load
                         fit: BoxFit.cover,
                         httpHeaders: _getHeaders(widget.source),
-                        color: Colors.black.withOpacity(0.6),
+                        color: DetailScreenColors.background.withOpacity(0.6),
                         colorBlendMode: BlendMode.darken,
                       ),
                       // Gambar Utama
@@ -209,7 +209,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               width: 140,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8),
-                                boxShadow: const [BoxShadow(color: Colors.black, blurRadius: 15)],
+                                boxShadow: [BoxShadow(color: DetailScreenColors.background, blurRadius: 15)],
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
@@ -238,11 +238,11 @@ class _DetailScreenState extends State<DetailScreen> {
                       _buildInfoRow(Icons.person, "Author", data.author),
                       _buildInfoRow(Icons.info, "Status", data.status),
                       const SizedBox(height: 20),
-                      const Text("Sinopsis", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 18)),
+                      Text("Sinopsis", style: TextStyle(color: DetailScreenColors.sectionTitle, fontWeight: FontWeight.bold, fontSize: 18)),
                       const SizedBox(height: 8),
-                      Text(data.synopsis, style: const TextStyle(color: Colors.white70, height: 1.5)),
+                      Text(data.synopsis, style: TextStyle(color: DetailScreenColors.textSecondary, height: 1.5)),
                       const SizedBox(height: 24),
-                      const Text("Daftar Chapter", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 18)),
+                      Text("Daftar Chapter", style: TextStyle(color: DetailScreenColors.sectionTitle, fontWeight: FontWeight.bold, fontSize: 18)),
                       const SizedBox(height: 10),
                     ],
                   ),
@@ -259,22 +259,22 @@ class _DetailScreenState extends State<DetailScreen> {
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isRead ? Colors.blue.withOpacity(0.1) : Colors.grey[900],
+                        color: isRead ? DetailScreenColors.sectionTitle.withOpacity(0.1) : DetailScreenColors.cardSurface,
                         borderRadius: BorderRadius.circular(8),
-                        border: isRead ? Border.all(color: Colors.blue.withOpacity(0.3)) : null,
+                        border: isRead ? Border.all(color: DetailScreenColors.sectionTitle.withOpacity(0.3)) : null,
                       ),
                       child: ListTile(
                         title: Text(
                           chapter.title, 
                           style: TextStyle(
-                            color: isRead ? Colors.blueAccent : Colors.white,
+                            color: isRead ? DetailScreenColors.accent : DetailScreenColors.textPrimary,
                             fontWeight: isRead ? FontWeight.bold : FontWeight.normal,
                             fontSize: 14,
                           ),
                         ),
                         trailing: Icon(
                           isRead ? Icons.check_circle : Icons.arrow_forward_ios, 
-                          color: isRead ? Colors.blueAccent : Colors.grey, 
+                          color: isRead ? DetailScreenColors.accent : DetailScreenColors.infoLabel, 
                           size: 16
                         ),
                         onTap: () async {
@@ -318,12 +318,24 @@ class _DetailScreenState extends State<DetailScreen> {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey, size: 20),
+          Icon(icon, color: DetailScreenColors.infoLabel, size: 20),
           const SizedBox(width: 8),
-          Text("$label: ", style: const TextStyle(color: Colors.grey)),
-          Expanded(child: Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
+          Text("$label: ", style: TextStyle(color: DetailScreenColors.infoLabel)),
+          Expanded(child: Text(value, style: TextStyle(color: DetailScreenColors.textPrimary, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
         ],
       ),
     );
   }
+}
+
+
+class DetailScreenColors {
+  static const background      = Colors.black;        // Background halaman detail
+  static final cardSurface     = Colors.grey[900];    // Card, AppBar, FAB, SnackBar
+  static const accent          = Colors.blueAccent;   // Chapter yg sudah dibaca (teks)
+  static const sectionTitle    = Colors.blue;         // Judul "Sinopsis" & "Daftar Chapter"
+  static const favorite        = Colors.redAccent;    // Ikon love/favorit
+  static const textPrimary     = Colors.white;        // Judul, info, teks utama
+  static const textSecondary   = Colors.white70;      // Sinopsis & deskripsi
+  static const infoLabel       = Colors.grey;         // Label info (Author, Status)
 }

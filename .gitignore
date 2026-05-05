@@ -58,3 +58,9 @@ app.*.map.json
 AGENT.md
 CLAUDE.md
 .agent-mem/
+.brainsync/
+.agents/
+.cursor/
+
+# Laporan & presentasi (non-code)
+laporan/

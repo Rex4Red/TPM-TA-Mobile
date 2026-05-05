@@ -70,7 +70,7 @@ class _FullScreenCoverState extends State<FullScreenCover> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: FullScreenCoverColors.background,
       body: Stack(
         children: [
           // Efek Visual Utama
@@ -91,7 +91,7 @@ class _FullScreenCoverState extends State<FullScreenCover> {
                       boxShadow: [
                         BoxShadow(
                           // Bayangan dinamis mengikuti kemiringan
-                          color: Colors.blueAccent.withOpacity(0.2),
+                          color: FullScreenCoverColors.glowShadow.withOpacity(0.2),
                           blurRadius: 30,
                           offset: Offset(_rotationY * 50, _rotationX * 50),
                         ),
@@ -114,7 +114,7 @@ class _FullScreenCoverState extends State<FullScreenCover> {
             top: 50,
             left: 20,
             child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              icon: Icon(Icons.close, color: FullScreenCoverColors.closeButton, size: 30),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -127,7 +127,7 @@ class _FullScreenCoverState extends State<FullScreenCover> {
             child: Center(
               child: Text(
                 "Miringkan HP untuk melihat detail",
-                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+                style: TextStyle(color: FullScreenCoverColors.hintText.withOpacity(0.5), fontSize: 12),
               ),
             ),
           ),
@@ -135,4 +135,11 @@ class _FullScreenCoverState extends State<FullScreenCover> {
       ),
     );
   }
+}
+
+class FullScreenCoverColors {
+  static const background   = Colors.black;       // Background layar penuh
+  static const glowShadow   = Colors.blueAccent;  // Glow/shadow 3D di cover
+  static const closeButton   = Colors.white;       // Ikon tombol close (X)
+  static const hintText      = Colors.white;       // Teks "Miringkan HP..."
 }

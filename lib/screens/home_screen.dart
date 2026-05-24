@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../services/api_service.dart';
+import '../services/recommendation_service.dart';
 import '../models/manga_model.dart';
 import '../widgets/modern_manga_card.dart';
 import 'search_screen.dart';
@@ -338,6 +339,32 @@ class _ShinigamiHomeViewState extends State<ShinigamiHomeView> {
   String _selectedRecType = 'manhwa';
   String _selectedLatestType = 'project';
 
+  // AI Recommendation
+  final RecommendationService _recService = RecommendationService();
+  List<Map<String, dynamic>> _aiRecommendations = [];
+  bool _aiLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAIRecommendations();
+  }
+
+  Future<void> _loadAIRecommendations() async {
+    await _recService.loadModel();
+    if (_recService.isReady && _recService.hasUserSelectedGenres()) {
+      final recs = _recService.getRecommendations(topN: 15);
+      if (mounted) {
+        setState(() {
+          _aiRecommendations = recs;
+          _aiLoaded = true;
+        });
+      }
+    } else {
+      if (mounted) setState(() => _aiLoaded = true);
+    }
+  }
+
   // Kita pakai Key untuk memaksa widget reload saat refresh/ganti filter
   Key _recKey = UniqueKey();
   Key _latestKey = UniqueKey();
@@ -363,6 +390,79 @@ class _ShinigamiHomeViewState extends State<ShinigamiHomeView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 20),
+
+                // === AI REKOMENDASI (Jika user sudah pilih genre) ===
+                if (_aiRecommendations.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.auto_awesome, color: Color(0xFF7C4DFF), size: 22),
+                        const SizedBox(width: 8),
+                        const Text(
+                          "Rekomendasi Untukmu",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF7C4DFF).withAlpha(40),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            "✨ AI",
+                            style: TextStyle(color: Color(0xFFB388FF), fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      "Berdasarkan genre: ${_recService.getUserGenres().join(', ')}",
+                      style: const TextStyle(color: Colors.white38, fontSize: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 200,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: _aiRecommendations.length,
+                      itemBuilder: (context, index) {
+                        final rec = _aiRecommendations[index];
+                        final manga = Manga(
+                          id: rec['manga_id'] ?? '',
+                          title: rec['title'] ?? '',
+                          image: rec['cover_url'] ?? '',
+                          chapter: '',
+                          score: (rec['score'] as double?)?.toStringAsFixed(1) ?? '',
+                          type: rec['source'] ?? 'shinigami',
+                        );
+                        return SizedBox(
+                          width: 130,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: ModernMangaCard(
+                              manga: manga,
+                              isFeatured: false,
+                              sourceMaster: rec['source'] ?? 'shinigami',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
                 _buildHeader("Featured Series 🔥", _selectedRecType, (val) {
                   setState(() {
                     _selectedRecType = val;

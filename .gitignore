@@ -64,3 +64,6 @@ CLAUDE.md
 
 # Laporan & presentasi (non-code)
 laporan/
+
+# AI Model (training, dataset, dll)
+ai_model/

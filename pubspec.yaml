@@ -77,6 +77,9 @@ flutter:
   # Daftarkan folder gambar di sini
   assets:
     - assets/images/
+    - assets/genre_list.json
+    - assets/manga_list.json
+    - assets/manga_weights.bin
 
 flutter_launcher_icons:
   android: "launcher_icon" 

@@ -7,6 +7,7 @@ import 'favorite_screen.dart';
 import 'notification_settings_screen.dart';
 import 'history_screen.dart';
 import 'main_screen.dart';
+import 'genre_selection_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -295,12 +296,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } else {
         // 🔥 REGISTER via Hive (+ Supabase silent di background)
         await _auth.signUp(email: email, password: password);
+        // Auto-login setelah register berhasil
+        await _auth.signIn(email: email, password: password);
+        // Redirect ke Genre Selection (pilih genre untuk rekomendasi AI)
         if (mounted) {
-          _showSuccessDialog(
-            "Berhasil Daftar!",
-            "Silakan login dengan akun barumu.",
+          setState(() => _isNavigating = true);
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const GenreSelectionScreen()),
+            (route) => false,
           );
-          setState(() => _isLoginMode = true);
+          return;
         }
       }
     } catch (e) {

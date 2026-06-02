@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
-import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'main_screen.dart';
 import 'profile_screen.dart';
@@ -15,7 +14,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   double _time = 0;
@@ -95,9 +95,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   void _navigateTo(Widget screen) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => screen),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (context) => screen));
   }
 
   @override
@@ -146,8 +146,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    SplashScreenColors.glowInner.withOpacity(0.25 * glowPulse),
-                                    SplashScreenColors.glowOuter.withOpacity(0.2 * glowPulse),
+                                    SplashScreenColors.glowInner.withOpacity(
+                                      0.25 * glowPulse,
+                                    ),
+                                    SplashScreenColors.glowOuter.withOpacity(
+                                      0.2 * glowPulse,
+                                    ),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -161,7 +165,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                               decoration: BoxDecoration(
                                 boxShadow: [
                                   BoxShadow(
-                                    color: SplashScreenColors.shadowGlow.withOpacity(0.4 * glowPulse),
+                                    color: SplashScreenColors.shadowGlow
+                                        .withOpacity(0.4 * glowPulse),
                                     blurRadius: 40,
                                     spreadRadius: 5,
                                   ),
@@ -198,13 +203,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       Icon(
                         Icons.fingerprint,
                         size: 48,
-                        color: _showRetryButton ? SplashScreenColors.bioError : SplashScreenColors.bioActive,
+                        color: _showRetryButton
+                            ? SplashScreenColors.bioError
+                            : SplashScreenColors.bioActive,
                       ),
                       const SizedBox(height: 10),
                       Text(
                         _biometricStatus,
                         style: TextStyle(
-                          color: _showRetryButton ? SplashScreenColors.bioError : SplashScreenColors.bioStatusText,
+                          color: _showRetryButton
+                              ? SplashScreenColors.bioError
+                              : SplashScreenColors.bioStatusText,
                           fontSize: 14,
                         ),
                       ),
@@ -220,7 +229,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         style: ElevatedButton.styleFrom(
                           backgroundColor: SplashScreenColors.retryBtnBg,
                           foregroundColor: SplashScreenColors.retryBtnText,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -240,14 +252,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
 // ==================== COLOR SETTINGS ====================
 class SplashScreenColors {
-  static const background       = Color(0xFF0B0F1A);     // Background gelap splash
-  static const glowInner        = Colors.blueAccent;      // Glow radial dalam (biru)
-  static const glowOuter        = Colors.purpleAccent;    // Glow radial luar (ungu)
-  static const shadowGlow       = Colors.blueAccent;      // Shadow dinamis logo
-  static const titleText        = Colors.white;           // Teks "MangaMotion"
-  static const bioActive        = Colors.blueAccent;      // Ikon fingerprint aktif
-  static const bioError         = Colors.redAccent;       // Ikon fingerprint gagal
-  static const bioStatusText    = Colors.white70;         // Teks status biometric
-  static const retryBtnBg       = Colors.blueAccent;      // Background tombol retry
-  static const retryBtnText     = Colors.white;           // Teks tombol retry
+  static const background = Color(0xFF0B0F1A); // Background gelap splash
+  static const glowInner = Colors.blueAccent; // Glow radial dalam (biru)
+  static const glowOuter = Colors.purpleAccent; // Glow radial luar (ungu)
+  static const shadowGlow = Colors.blueAccent; // Shadow dinamis logo
+  static const titleText = Colors.white; // Teks "MangaMotion"
+  static const bioActive = Colors.blueAccent; // Ikon fingerprint aktif
+  static const bioError = Colors.redAccent; // Ikon fingerprint gagal
+  static const bioStatusText = Colors.white70; // Teks status biometric
+  static const retryBtnBg = Colors.blueAccent; // Background tombol retry
+  static const retryBtnText = Colors.white; // Teks tombol retry
 }

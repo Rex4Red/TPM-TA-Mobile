@@ -67,3 +67,4 @@ laporan/
 
 # AI Model (training, dataset, dll)
 ai_model/
+.env

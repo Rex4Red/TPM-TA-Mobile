@@ -4,9 +4,12 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'screens/splash_screen.dart';
 import 'services/notification_service.dart';
 import 'services/auth_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
 
   // 📦 Inisialisasi Hive (Local Database)
   await Hive.initFlutter();
@@ -55,5 +58,6 @@ class MyApp extends StatelessWidget {
       // Splash screen nanti akan mengecek login & mengarahkan ke MainScreen/ProfileScreen
       home: const SplashScreen(),
     );
+    
   }
 }

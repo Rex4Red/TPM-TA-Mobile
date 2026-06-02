@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AiService {
-  static const String _apiKey = "AIzaSyDL1as5SkQBHF2WEvXyv3hr6m8P3g6909M";
+  static String get _apiKey => dotenv.env['API_KEY'] ?? '';
   static const String _baseUrl =
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
